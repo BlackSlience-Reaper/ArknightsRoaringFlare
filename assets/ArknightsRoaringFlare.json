@@ -1,0 +1,17 @@
+{
+  "id": "ArknightsRoaringFlare",
+  "name": "怒号光明",
+  "author": "Natsuki",
+  "description": "以《明日方舟》主线第八章“怒号光明”为主题的第三幕变体，与原版荣耀随机出现；装有 ActLikeIt2 时改为在第三幕开始前与荣耀一同供选择。",
+  "version": "0.1.0",
+  "min_game_version": "0.111.0",
+  "has_pck": true,
+  "has_dll": true,
+  "affects_gameplay": true,
+  "dependencies": [
+    {
+      "id": "STS2-RitsuLib",
+      "min_version": "0.6.2"
+    }
+  ]
+}

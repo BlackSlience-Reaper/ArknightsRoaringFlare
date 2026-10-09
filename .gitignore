@@ -1,0 +1,22 @@
+# 原版资源导出与由它派生的对照图，不能入库
+art/reference/
+art/codex/previews/
+art/previews/
+art/codex/rejected_v*/
+# 生成流水线的中间产物；定稿贴图的入库副本在 assets/images/（由 art/install_assets.py 安装）
+art/generated/
+art/final/
+art/codex/runs/
+# 下载的音乐原件；入库副本在 assets/audio/music/
+art/audio_source/
+# 构建产物（工作区根目录有同样的规则；单独成库时靠这几条）
+bin/
+obj/
+.build/
+dist/
+releases/
+.godot/
+*.log
+.DS_Store
+# 创意工坊上传工作区（元数据与上传缓存，不进公开仓库）
+workshop/

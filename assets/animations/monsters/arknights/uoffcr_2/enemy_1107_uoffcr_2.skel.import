@@ -1,0 +1,12 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+path="res://ArknightsRoaringFlare/_imported/enemy_1107_uoffcr_2.skel.spskel"
+
+[deps]
+
+source_file="res://ArknightsRoaringFlare/animations/monsters/arknights/uoffcr_2/enemy_1107_uoffcr_2.skel"
+dest_files=["res://ArknightsRoaringFlare/_imported/enemy_1107_uoffcr_2.skel.spskel"]
+
+[params]

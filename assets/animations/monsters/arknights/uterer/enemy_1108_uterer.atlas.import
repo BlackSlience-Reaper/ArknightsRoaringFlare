@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+path="res://ArknightsRoaringFlare/_imported/enemy_1108_uterer.atlas.spatlas"
+
+[deps]
+
+source_file="res://ArknightsRoaringFlare/animations/monsters/arknights/uterer/enemy_1108_uterer.atlas"
+dest_files=["res://ArknightsRoaringFlare/_imported/enemy_1108_uterer.atlas.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

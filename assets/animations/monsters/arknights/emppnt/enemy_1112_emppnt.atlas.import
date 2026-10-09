@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+path="res://ArknightsRoaringFlare/_imported/enemy_1112_emppnt.atlas.spatlas"
+
+[deps]
+
+source_file="res://ArknightsRoaringFlare/animations/monsters/arknights/emppnt/enemy_1112_emppnt.atlas"
+dest_files=["res://ArknightsRoaringFlare/_imported/enemy_1112_emppnt.atlas.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

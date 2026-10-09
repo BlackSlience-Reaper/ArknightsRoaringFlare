@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Core/Nodes/Combat/NCreatureVisuals.cs" id="1_script"]
+[ext_resource type="SpineSkeletonDataResource" path="res://ArknightsRoaringFlare/animations/monsters/arknights/ucommd_2/enemy_1111_ucommd_2_skel_data.tres" id="2_skel_data"]
+
+[node name="CommandoCaptainCreatureVisuals" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Visuals" type="SpineSprite" parent="." owner="."]
+unique_name_in_owner = true
+skeleton_data_res = ExtResource("2_skel_data")
+preview_skin = "default"
+preview_animation = "Idile"
+position = Vector2(16.5, 0)
+scale = Vector2(-0.75, 0.75)
+
+[node name="Bounds" type="Control" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(-82, -291)
+size = Vector2(165, 291)
+
+[node name="IntentPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -336)
+
+[node name="CenterPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -146)
+
+[node name="OrbPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -204)
+
+[node name="TalkPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(41, -247)

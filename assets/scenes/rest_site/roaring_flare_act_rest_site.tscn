@@ -1,0 +1,154 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/rest_site/hive_rest_site.tscn" id="1_base"]
+[ext_resource type="Texture2D" path="res://ArknightsRoaringFlare/images/rest_site/roaring_flare_act_rest_site_00.png" id="tex_0"]
+[ext_resource type="Texture2D" path="res://ArknightsRoaringFlare/images/rest_site/roaring_flare_act_rest_site_cutter_left.png" id="tex_1"]
+[ext_resource type="Texture2D" path="res://ArknightsRoaringFlare/images/rest_site/roaring_flare_act_rest_site_cutter_right.png" id="tex_2"]
+[ext_resource type="Texture2D" path="res://ArknightsRoaringFlare/images/rest_site/roaring_flare_act_rest_site_firepit.png" id="tex_3"]
+[ext_resource type="Texture2D" path="res://ArknightsRoaringFlare/images/rest_site/roaring_flare_act_rest_site_seat_left.png" id="tex_4"]
+[ext_resource type="Texture2D" path="res://ArknightsRoaringFlare/images/rest_site/roaring_flare_act_rest_site_seat_right.png" id="tex_5"]
+
+[node name="RoaringFlareActRestSite" instance=ExtResource("1_base")]
+
+[node name="RestSiteBG" parent="."]
+texture = ExtResource("tex_0")
+
+[node name="RestSiteLLog" parent="."]
+texture = ExtResource("tex_4")
+offset_left = 468.887
+offset_top = 521.007
+offset_right = 866.814
+offset_bottom = 776.937
+
+[node name="RestSiteRLog" parent="."]
+texture = ExtResource("tex_5")
+offset_left = 935.050
+offset_top = 516.579
+offset_right = 1391.350
+offset_bottom = 756.793
+
+[node name="RestSiteLLog2" parent="RestSiteLighting"]
+texture = ExtResource("tex_4")
+offset_left = 533.887
+offset_top = 586.007
+offset_right = 931.814
+offset_bottom = 841.937
+
+[node name="RestSiteRLog2" parent="RestSiteLighting"]
+texture = ExtResource("tex_5")
+offset_left = 1000.050
+offset_top = 581.579
+offset_right = 1456.350
+offset_bottom = 821.793
+
+[node name="RestSiteFireLogs" parent="."]
+texture = ExtResource("tex_3")
+offset_left = 775.235
+offset_top = 625.441
+offset_right = 1049.685
+offset_bottom = 837.032
+
+[node name="RestSiteForegroundLeft" parent="."]
+texture = ExtResource("tex_1")
+
+[node name="RestSiteForegroundRight" parent="."]
+texture = ExtResource("tex_2")
+
+[node name="WallLight1" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight2" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight3" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight4" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight5" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight6" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight7" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight8" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight9" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight10" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight11" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight12" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight13" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight14" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight15" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight16" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight17" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight18" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight19" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight20" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight21" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight22" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight23" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight24" parent="RestSiteLighting"]
+visible = false
+
+[node name="WallLight25" parent="RestSiteLighting"]
+visible = false
+
+[node name="LLogHighlight" parent="RestSiteLighting"]
+visible = false
+
+[node name="LLogHighlight2" parent="RestSiteLighting"]
+visible = false
+
+[node name="FireLight" parent="RestSiteLighting"]
+visible = false
+
+[node name="b_blob" parent="."]
+visible = false
+
+[node name="roots" parent="RestSiteLighting"]
+visible = false
+
+[node name="bugs_1" parent="overlay_vfx"]
+visible = false
+
+[node name="bugs_2" parent="overlay_vfx"]
+visible = false
+
+[node name="bugs_3" parent="overlay_vfx"]
+visible = false

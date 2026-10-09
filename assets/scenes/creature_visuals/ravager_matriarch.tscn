@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://src/Core/Nodes/Combat/NCreatureVisuals.cs" id="1_script"]
+[ext_resource type="SpineSkeletonDataResource" path="res://ArknightsRoaringFlare/animations/monsters/arknights/uterer_2/enemy_1108_uterer_2_skel_data.tres" id="2_skel_data"]
+
+[node name="RavagerMatriarchCreatureVisuals" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Visuals" type="SpineSprite" parent="." owner="."]
+unique_name_in_owner = true
+skeleton_data_res = ExtResource("2_skel_data")
+preview_skin = "default"
+preview_animation = "Idle"
+position = Vector2(16, 0)
+scale = Vector2(-0.75, 0.75)
+
+[node name="Bounds" type="Control" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(-112, -205)
+size = Vector2(225, 205)
+
+[node name="IntentPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -250)
+
+[node name="CenterPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -102)
+
+[node name="OrbPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(0, -144)
+
+[node name="TalkPos" type="Marker2D" parent="." owner="."]
+unique_name_in_owner = true
+position = Vector2(56, -174)

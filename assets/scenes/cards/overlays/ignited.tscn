@@ -1,0 +1,82 @@
+[gd_scene load_steps=12 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/vfx/ui/card/afflictions/smog/vfx_ui_card_affliction_smog.tscn" id="1_base"]
+[ext_resource type="Shader" path="res://shaders/vfx/ui/card/afflictions/smog/vfx_ui_card_affliction_smog_main_shader.gdshader" id="2_shader"]
+[ext_resource type="Texture2D" path="res://images/vfx/ui/card/afflictions/smog/ui_card_smog_mask.png" id="3_mask"]
+[ext_resource type="Texture2D" path="res://images/vfx/ui/card/afflictions/smog/ui_card_smog_mask_outer.png" id="4_mask_outer"]
+
+[sub_resource type="Gradient" id="Gradient_fire"]
+offsets = PackedFloat32Array(0.1, 0.55, 0.86, 0.96)
+colors = PackedColorArray(0.32, 0.03, 0.01, 1, 0.86, 0.22, 0.03, 1, 1, 0.62, 0.12, 1, 1, 0.93, 0.55, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_fire"]
+gradient = SubResource("Gradient_fire")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fire_main"]
+shader = ExtResource("2_shader")
+shader_parameter/main_st = Vector4(0.5, 0.75, 0.3, 0.7)
+shader_parameter/secondary_st = Vector4(0.75, 0.5, 0.45, 0.35)
+shader_parameter/secondary_smoke_influence = 0.35
+shader_parameter/erosion_factors = Vector2(0, 1)
+shader_parameter/lut = SubResource("GradientTexture1D_fire")
+shader_parameter/mask = ExtResource("3_mask")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fire_outer"]
+shader = ExtResource("2_shader")
+shader_parameter/main_st = Vector4(0.4, 0.76, 0.4, 0.65)
+shader_parameter/secondary_st = Vector4(0.67, 0.5, 0.6, 0.4)
+shader_parameter/secondary_smoke_influence = 0.35
+shader_parameter/erosion_factors = Vector2(0, 1)
+shader_parameter/lut = SubResource("GradientTexture1D_fire")
+shader_parameter/mask = ExtResource("4_mask_outer")
+
+[sub_resource type="Gradient" id="Gradient_ember"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.92, 0.5, 1, 1, 0.5, 0.1, 1, 0.7, 0.12, 0.02, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ember"]
+gradient = SubResource("Gradient_ember")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_embers"]
+lifetime_randomness = 0.5
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(140, 6, 1)
+direction = Vector3(0, -1, 0)
+spread = 20.0
+initial_velocity_min = 50.0
+initial_velocity_max = 110.0
+gravity = Vector3(0, -30, 0)
+scale_min = 0.12
+scale_max = 0.3
+color_ramp = SubResource("GradientTexture1D_ember")
+turbulence_enabled = true
+turbulence_noise_strength = 2.0
+turbulence_noise_scale = 4.0
+
+[node name="Ignited" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+
+[node name="vfx_ui_card_ignited" parent="." instance=ExtResource("1_base")]
+layout_mode = 1
+
+[node name="card_vignette" parent="vfx_ui_card_ignited/card_mask" index="0"]
+self_modulate = Color(0.18, 0.03, 0, 0.35)
+
+[node name="smog_main" parent="vfx_ui_card_ignited/card_mask" index="1"]
+material = SubResource("ShaderMaterial_fire_main")
+
+[node name="card_glow" parent="vfx_ui_card_ignited/card_mask" index="2"]
+self_modulate = Color(1, 0.48, 0.12, 1)
+
+[node name="vfx_common_specks" parent="vfx_ui_card_ignited/card_mask" index="3"]
+visible = true
+amount = 14
+lifetime = 2.2
+process_material = SubResource("ParticleProcessMaterial_embers")
+
+[node name="smog_main_outer" parent="vfx_ui_card_ignited" index="1"]
+material = SubResource("ShaderMaterial_fire_outer")
+
+[editable path="vfx_ui_card_ignited"]

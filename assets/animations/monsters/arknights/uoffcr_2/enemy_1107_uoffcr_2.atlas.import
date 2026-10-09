@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+path="res://ArknightsRoaringFlare/_imported/enemy_1107_uoffcr_2.atlas.spatlas"
+
+[deps]
+
+source_file="res://ArknightsRoaringFlare/animations/monsters/arknights/uoffcr_2/enemy_1107_uoffcr_2.atlas"
+dest_files=["res://ArknightsRoaringFlare/_imported/enemy_1107_uoffcr_2.atlas.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

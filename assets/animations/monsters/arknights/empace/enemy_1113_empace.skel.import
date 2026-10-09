@@ -1,0 +1,12 @@
+[remap]
+
+importer="spine.skel"
+type="SpineSkeletonFileResource"
+path="res://ArknightsRoaringFlare/_imported/enemy_1113_empace.skel.spskel"
+
+[deps]
+
+source_file="res://ArknightsRoaringFlare/animations/monsters/arknights/empace/enemy_1113_empace.skel"
+dest_files=["res://ArknightsRoaringFlare/_imported/enemy_1113_empace.skel.spskel"]
+
+[params]

@@ -1,0 +1,15 @@
+[remap]
+
+importer="spine.atlas"
+type="SpineAtlasResource"
+path="res://ArknightsRoaringFlare/_imported/enemy_1061_zomshd.atlas.spatlas"
+
+[deps]
+
+source_file="res://ArknightsRoaringFlare/animations/monsters/arknights/zomshd/enemy_1061_zomshd.atlas"
+dest_files=["res://ArknightsRoaringFlare/_imported/enemy_1061_zomshd.atlas.spatlas"]
+
+[params]
+
+normal_map_prefix="n"
+specular_map_prefix="s"

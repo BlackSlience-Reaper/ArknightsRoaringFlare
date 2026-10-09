@@ -1,0 +1,228 @@
+using ArknightsRoaringFlare.Monsters;
+using Godot;
+using MegaCrit.Sts2.Core.Bindings.MegaSpine;
+using MegaCrit.Sts2.Core.Entities.Encounters;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Nodes.Vfx;
+using MegaCrit.Sts2.Core.Rooms;
+using STS2RitsuLib.Scaffolding.Content;
+
+namespace ArknightsRoaringFlare.Encounters;
+
+// 怒号光明的战斗池，规模照原版荣耀：弱 3、普通 9、精英 3，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
+// 组成、总血量与对照原版的难度见 docs/设计文档.md。起手偏移（SetOpenings）由 docs/tools/opening_sim.py --search 挑出，
+// 对齐原版荣耀同类型遭遇战的平均开局伤害；改阵容或数值后要重跑，并同步模拟器里的 OPENINGS。
+// 同一场里的同种怪起手一律错开（模拟器硬约束，自检核对）。站位从左到右就是出手顺序，给自己叠力量的头目站最右。
+
+// ---- 弱怪 ----
+
+/// <summary>R8-1 昨日，谷壳将裂：纠察队巡逻，纠察官 ×2（一射击一搜捕起手，之后随机出招）。</summary>
+public sealed class PatrolWeak : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	public override bool IsWeak => true;
+
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Patrol];
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<InfectedPatrolOfficer>(), M<InfectedPatrolOfficer>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 2);
+}
+
+/// <summary>R8-1/R8-2：裂兽 ×2（一撕咬一撕裂起手，之后随机出招）。</summary>
+public sealed class RavagersWeak : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	public override bool IsWeak => true;
+
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Ravagers];
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusRavager>(), M<UrsusRavager>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2);
+}
+
+/// <summary>R8-6：着铠术师单体（先法术连击）。</summary>
+public sealed class ArmoredCasterWeak : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	public override bool IsWeak => true;
+
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Casters];
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1);
+}
+
+// ---- 普通 ----
+
+/// <summary>R8-1 昨日，谷壳将裂：谷壳村搜捕，纠察官 ×2 + 高级纠察官（高级纠察官先押送，站最右）。</summary>
+public sealed class HuskVillageSearchNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Patrol];
+
+	protected override IReadOnlyList<MonsterModel> Lineup =>
+		[M<InfectedPatrolOfficer>(), M<InfectedPatrolOfficer>(), M<SeniorPatrolOfficer>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2, 0);
+}
+
+/// <summary>裂兽群：裂兽 ×2 + 裂兽族母（族母先嗥叫，站最右、最后出手）。</summary>
+public sealed class RavagerPackNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Ravagers];
+
+	protected override IReadOnlyList<MonsterModel> Lineup =>
+		[M<UrsusRavager>(), M<UrsusRavager>(), M<RavagerMatriarch>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 2, 0);
+}
+
+/// <summary>R8-4 火种，一触即灭：突袭弩手 ×2（第二名先射弩箭）。</summary>
+public sealed class CrossbowmenNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusCrossbowman>(), M<UrsusCrossbowman>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 1);
+}
+
+/// <summary>R8-6 战场，蔓延不止：术师小队，着铠术师 + 高级着铠术师（高级先铠化）。</summary>
+public sealed class CasterSquadNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Casters];
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>(), M<SeniorArmoredCaster>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2);
+}
+
+/// <summary>R8-5 寒冷，来自知觉：突击者小队，突击者（先稳阵）+ 纠察官。</summary>
+public sealed class CommandoSquadNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusCommando>(), M<InfectedPatrolOfficer>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2, 0);
+}
+
+/// <summary>R8-7 牵引的炮火：纠察官 + 炮火先兆者（先标定，下一回合炮击）。</summary>
+public sealed class GuidedArtilleryNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<InfectedPatrolOfficer>(), M<ArtilleryHarbinger>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 0);
+}
+
+/// <summary>R8-10 沉默的屠夫：帝国前锋精锐单体（先战意）。</summary>
+public sealed class SilentButcherNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<ImperialVanguard>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+}
+
+/// <summary>M8-7 恶言，报应不爽：宿主重装士兵（先重压）+ 萨卡兹宿主百夫长（先吟唱，站最右）。</summary>
+public sealed class HostCenturionNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<HostHeavySoldier>(), M<SarkazHostCenturion>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2, 2);
+}
+
+/// <summary>H8-2：乌萨斯突击者队长单体（先压阵）。</summary>
+public sealed class CommandoCaptainNormal : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Monster;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<CommandoCaptain>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+}
+
+// ---- 精英 ----
+
+/// <summary>WD-8 大雪将至（「遗尘漫步」）：“皇帝的利刃”，追猎者（先巡猎）。两形态，有专属配乐。</summary>
+public sealed class EmperorsBladeElite : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Elite;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<EmperorsBladeHunter>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+}
+
+/// <summary>R8-11 落雪，浸黑国土：高级纠察官（先重击）+ 帝国前锋百战精锐。</summary>
+public sealed class VanguardVeteranElite : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Elite;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<SeniorPatrolOfficer>(), M<VanguardVeteran>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 0);
+}
+
+/// <summary>R8-8 人心，向背无常：着铠术师（先法术连击）+ 帝国炮火中枢先兆者（先标定）。</summary>
+public sealed class CoreHarbingerElite : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Elite;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>(), M<CoreHarbinger>()];
+
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 0);
+}
+
+// ---- Boss ----
+
+/// <summary>
+/// JT8-3 昂首，足践烈焰：塔露拉（附身的“不死的黑蛇”），两阶段（见 <see cref="Talulah"/>）。
+/// 按场景标记点站位（照原版卵翼虫）：五个火球召唤槽在前（排成一竖列）、塔露拉在最后，召唤物先于黑蛇出手。
+/// </summary>
+public sealed class TalulahBoss : FlareEncounter
+{
+	public override RoomType RoomType => RoomType.Boss;
+
+	// 地图节点用静态图（照原版知识恶魔）：原版在 BossNodePath 后拼 .png（剪影）与 _outline.png（描边）。
+	public override string BossNodePath => RoaringFlareAssets.TalulahBossNodePrefix;
+
+	public override MegaSkeletonDataResource? BossNodeSpineResource => null;
+
+	// 中途才召唤的火球场景、引燃的卡面覆盖层与结算时的火焰特效要列进预载，否则召唤时“Asset not cached”并同步加载卡一下（苦难摇篮实机踩过）。
+	public override EncounterAssetProfile AssetProfile =>
+		RoaringFlareAssets.TalulahBossProfile([ModelDb.Monster<Fireball>().CreatureScenePath, NFireBurstVfx.scenePath,
+			RoaringFlareAssets.AfflictionOverlay("ignited")]);
+
+	// 镜头拉远照原版三体 Boss 与苦难摇篮爱国者（0.85、下移 30）；专属背景按这个镜头构图，下移超过约 33 会露出贴图上沿。
+	public override float GetCameraScaling() => 0.85f;
+
+	public override Vector2 GetCameraOffset() => Vector2.Down * 30f;
+
+	// 专属战场背景：不用幕背景，改用 AssetProfile 里的背景根场景与图层目录。
+	protected override bool UseActCombatBackground => false;
+
+	public override IReadOnlyList<string> Slots => Talulah.FormationSlots;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<Talulah>()];
+
+	protected override IReadOnlyList<string> LineupSlots => [Talulah.BossSlot];
+
+	protected override IEnumerable<MonsterModel> Candidates => [M<Talulah>(), M<Fireball>()];
+}

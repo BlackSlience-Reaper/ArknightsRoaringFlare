@@ -1,0 +1,5 @@
+{
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.title": "Ignited",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.description": "Take [blue]{Amount}[/blue] damage when this card is played.",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.extraCardText": "Take {Amount} damage."
+}
