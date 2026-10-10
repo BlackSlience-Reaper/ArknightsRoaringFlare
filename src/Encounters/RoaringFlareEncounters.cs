@@ -10,8 +10,8 @@ using STS2RitsuLib.Scaffolding.Content;
 namespace ArknightsRoaringFlare.Encounters;
 
 // 怒号光明的战斗池，规模照原版荣耀：弱 3、普通 9、精英 3，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
-// 组成、总血量与对照原版的难度见 docs/设计文档.md。起手偏移（SetOpenings）由 docs/tools/opening_sim.py --search 挑出，
-// 对齐原版荣耀同类型遭遇战的平均开局伤害；改阵容或数值后要重跑，并同步模拟器里的 OPENINGS。
+// 组成、总血量与对照原版的难度见 docs/设计文档.md。起手偏移（SetOpenings）与 docs/tools/opening_sim.py 的 OPENINGS 同步；
+// 裂兽按设计固定以 1/2/3 起手，族母固定召集开场，其余起手由开局模拟挑选。
 // 同一场里的同种怪起手一律错开（模拟器硬约束，自检核对）。站位从左到右就是出手顺序，给自己叠力量的头目站最右。
 
 // ---- 弱怪 ----
@@ -30,7 +30,7 @@ public sealed class PatrolWeak : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 2);
 }
 
-/// <summary>R8-1/R8-2：裂兽 ×2（一撕咬一撕裂起手，之后随机出招）。</summary>
+/// <summary>裂兽 ×3，分别以撕咬、警戒、扑击开场，之后按三招循环。</summary>
 public sealed class RavagersWeak : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
@@ -39,9 +39,9 @@ public sealed class RavagersWeak : FlareEncounter
 
 	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Ravagers];
 
-	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusRavager>(), M<UrsusRavager>()];
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusRavager>(), M<UrsusRavager>(), M<UrsusRavager>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 1, 2);
 }
 
 /// <summary>R8-6：着铠术师单体（先法术连击）。</summary>
@@ -73,17 +73,24 @@ public sealed class HuskVillageSearchNormal : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2, 0);
 }
 
-/// <summary>裂兽群：裂兽 ×2 + 裂兽族母（族母先嗥叫，站最右、最后出手）。</summary>
+/// <summary>裂兽群：族母独自以召集开场，三个裂兽槽在前，族母最后出手。</summary>
 public sealed class RavagerPackNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
 
 	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Ravagers];
 
-	protected override IReadOnlyList<MonsterModel> Lineup =>
-		[M<UrsusRavager>(), M<UrsusRavager>(), M<RavagerMatriarch>()];
+	public override EncounterAssetProfile AssetProfile => new(
+		EncounterScenePath: RoaringFlareAssets.EncounterScene("ravager_pack"),
+		ExtraAssetPaths: [ModelDb.Monster<UrsusRavager>().CreatureScenePath]);
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 2, 0);
+	public override IReadOnlyList<string> Slots => RavagerMatriarch.FormationSlots;
+
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<RavagerMatriarch>()];
+
+	protected override IReadOnlyList<string> LineupSlots => [RavagerMatriarch.MatriarchSlot];
+
+	protected override IEnumerable<MonsterModel> Candidates => [M<RavagerMatriarch>(), M<UrsusRavager>()];
 }
 
 /// <summary>R8-4 火种，一触即灭：突袭弩手 ×2（第二名先射弩箭）。</summary>

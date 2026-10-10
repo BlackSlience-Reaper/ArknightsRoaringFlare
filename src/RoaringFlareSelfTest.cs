@@ -302,7 +302,7 @@ internal static class RoaringFlareSelfTest
 		Check("random move machines", () =>
 		{
 			// 随机出招的怪：每招之后回到同一个随机分支，分支恰好覆盖这几招且都不能连用；与 opening_sim.py 的 rand(...) 对应。
-			Type[] randomTypes = [typeof(InfectedPatrolOfficer), typeof(UrsusRavager)];
+			Type[] randomTypes = [typeof(InfectedPatrolOfficer)];
 			List<string> report = [];
 			foreach (Type type in randomTypes)
 			{

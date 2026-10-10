@@ -44,9 +44,9 @@ MONSTERS = {
     'SeniorPatrolOfficer': (('感染者高级纠察官', 'Senior Patrol Officer'),
                             {'ESCORT': ('押送', 'Escort'), 'HEAVY_BLOW': ('重击', 'Heavy Blow'), 'COMBO': ('连击', 'Combo')}),
     'UrsusRavager': (('乌萨斯裂兽', 'Ursus Ravager'),
-                     {'BITE': ('撕咬', 'Bite'), 'POUNCE': ('扑击', 'Pounce'), 'REND': ('撕裂', 'Rend')}),
+                     {'BITE': ('撕咬', 'Bite'), 'ALERT': ('警戒', 'Alert'), 'POUNCE': ('扑击', 'Pounce')}),
     'RavagerMatriarch': (('乌萨斯裂兽族母', 'Ravager Matriarch'),
-                         {'HOWL': ('嗥叫', 'Howl'), 'BITE': ('撕咬', 'Bite'), 'POUNCE': ('扑击', 'Pounce')}),
+                         {'SUMMON': ('召集', 'Rally'), 'HEAL': ('治愈', 'Heal'), 'INSPIRE': ('鼓舞', 'Inspire'), 'INTIMIDATE': ('震慑', 'Intimidate')}),
     'UrsusCrossbowman': (('乌萨斯突袭弩手', 'Ursus Raid Crossbowman'),
                          {'WIND': ('上弦', 'Wind Up'), 'BOLT': ('弩箭', 'Bolt'), 'VOLLEY': ('速射', 'Volley')}),
     'UrsusArmoredCaster': (('乌萨斯着铠术师', 'Ursus Armored Caster'),
@@ -82,6 +82,24 @@ MONSTERS = {
 
 # 类名: (中文标题, 英文标题, 中文说明, 英文说明, 中文 smart, 英文 smart)
 POWERS = {
+    'RendPower': (
+        '撕裂', 'Rend',
+        '每次对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'Whenever it deals unblocked attack damage to you, lose [blue]{Amount}[/blue] [gold]Strength[/gold] next turn.',
+        '每当[gold]{OwnerName}[/gold]对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'Whenever [gold]{OwnerName}[/gold] deals unblocked attack damage to you, lose [blue]{Amount}[/blue] [gold]Strength[/gold] next turn.'),
+    'TraumaPower': (
+        '创伤', 'Trauma',
+        '本回合内失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'Lose [blue]{Amount}[/blue] [gold]Strength[/gold] this turn.',
+        '本回合内失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'Lose [blue]{Amount}[/blue] [gold]Strength[/gold] this turn.'),
+    'PackInstinctPower': (
+        '族群意识', 'Pack Instinct',
+        '每当一只乌萨斯裂兽死亡时，自身获得[gold]力量[/gold]。',
+        'Whenever an allied Ursus Ravager dies, gains [gold]Strength[/gold].',
+        '每当一只乌萨斯裂兽死亡时，自身获得[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'Whenever an allied Ursus Ravager dies, gains [blue]{Amount}[/blue] [gold]Strength[/gold].'),
     'FlareRebirthPower': (
         '重生', 'Rebirth',
         '被击败时不会立刻退场，之后进入下一阶段。',

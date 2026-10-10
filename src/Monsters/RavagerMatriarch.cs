@@ -1,7 +1,12 @@
+using ArknightsRoaringFlare.Powers;
 using ArknightsRoaringFlare.Vfx;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
+using MegaCrit.Sts2.Core.Commands;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.MonsterMoves;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 
@@ -9,16 +14,18 @@ namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
 /// 乌萨斯裂兽族母（PRTS enemy_1108_uterer_2），裂兽的强化版。
-/// 招式与数值见 docs/设计文档.md：嗥叫（自身力量 + 格挡）→ 撕咬 → 扑击（两段）。嗥叫只强化自己；站最右、最后出手。
+/// 召集开场，之后按存活裂兽数量决定召唤权重，再按 40/30/30 分配治愈、鼓舞与震慑；族母最后出手。
 /// </summary>
 public sealed class RavagerMatriarch : FlareMonster
 {
-	public const string HowlMoveId = "HOWL_MOVE";
-	public const string BiteMoveId = "BITE_MOVE";
-	public const string PounceMoveId = "POUNCE_MOVE";
+	public const string SummonMoveId = "SUMMON_MOVE";
+	public const string HealMoveId = "HEAL_MOVE";
+	public const string InspireMoveId = "INSPIRE_MOVE";
+	public const string IntimidateMoveId = "INTIMIDATE_MOVE";
 
-	private const int PounceHits = 2;
-	private const int HowlBlock = 6;
+	public const string MatriarchSlot = "matriarch";
+	public static readonly IReadOnlyList<string> RavagerSlots = ["ravager1", "ravager2", "ravager3"];
+	public static readonly IReadOnlyList<string> FormationSlots = [.. RavagerSlots, MatriarchSlot];
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.4f;
@@ -38,37 +45,94 @@ public sealed class RavagerMatriarch : FlareMonster
 
 	public override IReadOnlyList<string> RequiredAnimations => ["Idle", AttackAnimation, "Die"];
 
-	public override int MinInitialHp => ToughValue(76, 72);
+	public override int MinInitialHp => ToughValue(129, 126);
 
-	public override int MaxInitialHp => ToughValue(80, 76);
+	public override int MaxInitialHp => ToughValue(133, 130);
 
-	private int HowlStrength => DeadlyValue(3, 2);
+	private int PackStrength => DeadlyValue(4, 3);
 
-	private int BiteDamage => DeadlyValue(13, 12);
+	private int SummonVigor => DeadlyValue(5, 3);
 
-	private int PounceDamage => DeadlyValue(6, 5);
+	private int HealPercent => DeadlyValue(10, 8);
+
+	private int IntimidateDamage => DeadlyValue(15, 13);
+
+	private int LivingRavagers => CombatState.Enemies.Count(c => c.IsAlive && c.Monster is UrsusRavager);
+
+	private string? FreeRavagerSlot =>
+		RavagerSlots.FirstOrDefault(slot => CombatState.Enemies.All(c => c.SlotName != slot));
+
+	private float SummonWeight => FreeRavagerSlot is null ? 0f : LivingRavagers switch
+	{
+		0 => 80f,
+		1 => 50f,
+		2 => 20f,
+		_ => 0f,
+	};
+
+	public override async Task AfterAddedToRoom()
+	{
+		await base.AfterAddedToRoom();
+		await ApplyPower<PackInstinctPower>([Creature], PackStrength);
+	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
-		MoveState howl = new(HowlMoveId, HowlMove, new BuffIntent(), new DefendIntent());
-		MoveState bite = new(BiteMoveId, BiteMove, new SingleAttackIntent(BiteDamage));
-		MoveState pounce = new(PounceMoveId, PounceMove, new MultiAttackIntent(PounceDamage, PounceHits));
-		howl.FollowUpState = bite;
-		bite.FollowUpState = pounce;
-		pounce.FollowUpState = howl;
-		return Machine([howl, bite, pounce], howl);
+		MoveState summon = new(SummonMoveId, SummonMove, new SummonIntent(), new BuffIntent());
+		MoveState heal = new(HealMoveId, HealMove, new HealIntent());
+		MoveState inspire = new(InspireMoveId, InspireMove, new BuffIntent());
+		MoveState intimidate = new(IntimidateMoveId, IntimidateMove, new SingleAttackIntent(IntimidateDamage), new DebuffIntent());
+		RandomBranchState loop = new("MATRIARCH_RANDOM");
+		// 总权重始终为 100：先留出召集概率，再把其余概率按 40/30/30 分配；允许连续使用。
+		// 召集放在最后，避免原版 RNG 恰好为 0 时选中首项的零权重分支。
+		loop.AddBranch(heal, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * 0.4f);
+		loop.AddBranch(inspire, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * 0.3f);
+		loop.AddBranch(intimidate, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * 0.3f);
+		loop.AddBranch(summon, MoveRepeatType.CanRepeatForever, () => SummonWeight);
+		foreach (MoveState move in new[] { summon, heal, inspire, intimidate })
+		{
+			move.FollowUpState = loop;
+		}
+
+		return Build([summon, heal, inspire, intimidate, loop], summon);
 	}
 
-	private async Task HowlMove(IReadOnlyList<Creature> targets)
+	private async Task SummonMove(IReadOnlyList<Creature> targets)
+	{
+		if (LivingRavagers >= RavagerSlots.Count || FreeRavagerSlot is not { } slot)
+		{
+			return;
+		}
+
+		BuffCue();
+		UrsusRavager ravager = (UrsusRavager)ModelDb.Monster<UrsusRavager>().ToMutable();
+		// 在建立状态机之前设起手，使用与原版选招相同的同步 RNG。
+		ravager.OpeningOffset = RunRng.MonsterAi.NextInt(2) == 0 ? 0 : 2;
+		Creature summoned = await CreatureCmd.Add(ravager, CombatState, slotName: slot);
+		await CreatureCmd.SetCurrentHp(summoned, summoned.MaxHp / 2);
+		await ApplyPower<VigorPower>([summoned], SummonVigor);
+	}
+
+	private async Task HealMove(IReadOnlyList<Creature> targets)
 	{
 		BuffCue();
-		await ApplyStrengthToSelf(HowlStrength);
-		await GainBlock(HowlBlock);
+		foreach (Creature ally in CombatState.GetTeammatesOf(Creature).Where(c => c.IsAlive).ToList())
+		{
+			await CreatureCmd.Heal(ally, ally.MaxHp * HealPercent / 100m);
+		}
 	}
 
-	private Task BiteMove(IReadOnlyList<Creature> targets) => Strike(BiteDamage, vfx: BiteVfx);
+	private async Task InspireMove(IReadOnlyList<Creature> targets)
+	{
+		BuffCue();
+		await ApplyPower<StrengthPower>(CombatState.GetTeammatesOf(Creature).Where(c => c.IsAlive).ToList(), 2);
+	}
 
-	private Task PounceMove(IReadOnlyList<Creature> targets) => Strike(PounceDamage, PounceHits);
+	private async Task IntimidateMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(IntimidateDamage, vfx: BiteVfx);
+		await ApplyPower<WeakPower>(targets, 2);
+	}
 
 	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>
 		BuildAnimator(controller, "Idle", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));
