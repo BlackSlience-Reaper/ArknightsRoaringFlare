@@ -81,6 +81,9 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	private const float SummonDelay = 1.167f;
 
 	private const int BiteHits = 2;
+	private const int RebirthCount = 1;
+	private const int BlackSnakeBodyAmount = 1;
+	private const int EnragedHpPercent = 150;
 	private const int FireballsPerWave = 5;
 
 	/// <summary>二阶段每次引爆后的火雨：一列 3 个火球（不息恶火的小规模版，代替原作的能量聚合体）。</summary>
@@ -361,7 +364,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	}
 
 	/// <summary>重生后“生命上限 +50%”。</summary>
-	private int EnragedSnakeHp => MinInitialHp * 3 / 2;
+	private int EnragedSnakeHp => MinInitialHp * EnragedHpPercent / 100;
 
 	/// <summary>开局点燃给的引燃层数：之后玩家每打出一张牌，这张牌的引燃就加这么多层。</summary>
 	private const int IgnitionStacks = 2;
@@ -383,8 +386,8 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	{
 		await base.AfterAddedToRoom();
 		// 只重生一次：第二次被击败即死亡。
-		await ApplyPower<TalulahRebirthPower>([Creature], 1);
-		await ApplyPower<BlackSnakeBodyPower>([Creature], 1);
+		await ApplyPower<TalulahRebirthPower>([Creature], RebirthCount);
+		await ApplyPower<BlackSnakeBodyPower>([Creature], BlackSnakeBodyAmount);
 		if (CombatState.IsLiveCombat())
 		{
 			BattlefieldBlast.Begin();

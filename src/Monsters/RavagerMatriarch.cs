@@ -23,6 +23,17 @@ public sealed class RavagerMatriarch : FlareMonster
 	public const string InspireMoveId = "INSPIRE_MOVE";
 	public const string IntimidateMoveId = "INTIMIDATE_MOVE";
 
+	private const int InspireStrength = 2;
+	private const int IntimidateWeak = 2;
+	private const int SummonHpPercent = 50;
+	private const float SummonWeightWithNone = 80f;
+	private const float SummonWeightWithOne = 50f;
+	private const float SummonWeightWithTwo = 20f;
+	private const float HealShare = 0.4f;
+	private const float InspireShare = 0.3f;
+	private const float IntimidateShare = 0.3f;
+	private static readonly int[] SummonedOpeningOffsets = [0, 2];
+
 	public const string MatriarchSlot = "matriarch";
 	public static readonly IReadOnlyList<string> RavagerSlots = ["ravager1", "ravager2", "ravager3"];
 	public static readonly IReadOnlyList<string> FormationSlots = [.. RavagerSlots, MatriarchSlot];
@@ -64,9 +75,9 @@ public sealed class RavagerMatriarch : FlareMonster
 
 	private float SummonWeight => FreeRavagerSlot is null ? 0f : LivingRavagers switch
 	{
-		0 => 80f,
-		1 => 50f,
-		2 => 20f,
+		0 => SummonWeightWithNone,
+		1 => SummonWeightWithOne,
+		2 => SummonWeightWithTwo,
 		_ => 0f,
 	};
 
@@ -85,9 +96,9 @@ public sealed class RavagerMatriarch : FlareMonster
 		RandomBranchState loop = new("MATRIARCH_RANDOM");
 		// 总权重始终为 100：先留出召集概率，再把其余概率按 40/30/30 分配；允许连续使用。
 		// 召集放在最后，避免原版 RNG 恰好为 0 时选中首项的零权重分支。
-		loop.AddBranch(heal, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * 0.4f);
-		loop.AddBranch(inspire, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * 0.3f);
-		loop.AddBranch(intimidate, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * 0.3f);
+		loop.AddBranch(heal, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * HealShare);
+		loop.AddBranch(inspire, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * InspireShare);
+		loop.AddBranch(intimidate, MoveRepeatType.CanRepeatForever, () => (100f - SummonWeight) * IntimidateShare);
 		loop.AddBranch(summon, MoveRepeatType.CanRepeatForever, () => SummonWeight);
 		foreach (MoveState move in new[] { summon, heal, inspire, intimidate })
 		{
@@ -107,9 +118,9 @@ public sealed class RavagerMatriarch : FlareMonster
 		BuffCue();
 		UrsusRavager ravager = (UrsusRavager)ModelDb.Monster<UrsusRavager>().ToMutable();
 		// 在建立状态机之前设起手，使用与原版选招相同的同步 RNG。
-		ravager.OpeningOffset = RunRng.MonsterAi.NextInt(2) == 0 ? 0 : 2;
+		ravager.OpeningOffset = SummonedOpeningOffsets[RunRng.MonsterAi.NextInt(SummonedOpeningOffsets.Length)];
 		Creature summoned = await CreatureCmd.Add(ravager, CombatState, slotName: slot);
-		await CreatureCmd.SetCurrentHp(summoned, summoned.MaxHp / 2);
+		await CreatureCmd.SetCurrentHp(summoned, decimal.Floor(summoned.MaxHp * SummonHpPercent / 100m));
 		await ApplyPower<VigorPower>([summoned], SummonVigor);
 	}
 
@@ -125,13 +136,13 @@ public sealed class RavagerMatriarch : FlareMonster
 	private async Task InspireMove(IReadOnlyList<Creature> targets)
 	{
 		BuffCue();
-		await ApplyPower<StrengthPower>(CombatState.GetTeammatesOf(Creature).Where(c => c.IsAlive).ToList(), 2);
+		await ApplyPower<StrengthPower>(CombatState.GetTeammatesOf(Creature).Where(c => c.IsAlive).ToList(), InspireStrength);
 	}
 
 	private async Task IntimidateMove(IReadOnlyList<Creature> targets)
 	{
 		await Strike(IntimidateDamage, vfx: BiteVfx);
-		await ApplyPower<WeakPower>(targets, 2);
+		await ApplyPower<WeakPower>(targets, IntimidateWeak);
 	}
 
 	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>

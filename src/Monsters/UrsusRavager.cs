@@ -22,6 +22,8 @@ public sealed class UrsusRavager : FlareMonster
 
 	private const int PounceHits = 2;
 	private const int BiteWounds = 1;
+	private const int RendAmount = 1;
+	private const int AlertStrength = 2;
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.4f;
@@ -52,7 +54,7 @@ public sealed class UrsusRavager : FlareMonster
 	public override async Task AfterAddedToRoom()
 	{
 		await base.AfterAddedToRoom();
-		await ApplyPower<RendPower>([Creature], 1);
+		await ApplyPower<RendPower>([Creature], RendAmount);
 	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
@@ -75,7 +77,7 @@ public sealed class UrsusRavager : FlareMonster
 	private async Task AlertMove(IReadOnlyList<Creature> targets)
 	{
 		BuffCue();
-		await ApplyStrengthToSelf(2);
+		await ApplyStrengthToSelf(AlertStrength);
 	}
 
 	private Task PounceMove(IReadOnlyList<Creature> targets) => Strike(PounceDamage, PounceHits);

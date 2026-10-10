@@ -43,6 +43,8 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 	private const int PatrolHits = 3;
 	private const int RendHits = 3;
 	private const int DreadTangled = 1;
+	private const int SovereignAmount = 1;
+	private const int RebirthCount = 1;
 	private const float ReformSeconds = 1.6f;
 
 	private bool _secondForm;
@@ -170,8 +172,8 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 	public override async Task AfterAddedToRoom()
 	{
 		await base.AfterAddedToRoom();
-		await ApplyPower<HunterSovereignPower>([Creature], 1);
-		await ApplyPower<FlareRebirthPower>([Creature], 1);
+		await ApplyPower<HunterSovereignPower>([Creature], SovereignAmount);
+		await ApplyPower<FlareRebirthPower>([Creature], RebirthCount);
 	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
@@ -251,7 +253,7 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 		// 内卫与国度都声明死后不移除（ShouldPowerBeRemovedAfterOwnerDeath），倒地前叠的国度层数留到二形态。
 		if (Creature.GetPower<HunterSovereignPower>() is not { } sovereign)
 		{
-			await ApplyPower<HunterSovereignPower>([Creature], 1);
+			await ApplyPower<HunterSovereignPower>([Creature], SovereignAmount);
 			sovereign = Creature.GetPower<HunterSovereignPower>()!;
 		}
 

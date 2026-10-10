@@ -78,7 +78,7 @@ public sealed class RavagerPackNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
 
-	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Ravagers];
+	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Ravagers]; // 考虑可以移除这个tag
 
 	public override EncounterAssetProfile AssetProfile => new(
 		EncounterScenePath: RoaringFlareAssets.EncounterScene("ravager_pack"),
