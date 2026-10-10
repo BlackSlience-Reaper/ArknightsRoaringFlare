@@ -1,6 +1,6 @@
 {
   "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.title": "撕裂",
-  "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.description": "每次对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.description": "每次对你造成未被格挡的攻击伤害时，你将在下回合失去[gold]力量[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.smartDescription": "每当[gold]{OwnerName}[/gold]对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_POWER_TRAUMA_POWER.title": "创伤",
   "ARKNIGHTS_ROARING_FLARE_POWER_TRAUMA_POWER.description": "本回合内失去[gold]力量[/gold]。",
