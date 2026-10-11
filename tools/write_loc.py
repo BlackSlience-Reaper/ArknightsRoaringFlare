@@ -19,10 +19,10 @@ ACT = {'title': ('怒号光明', 'Roaring Flare'), 'description': ('怒号光明
 
 # 类名: (中文, 英文, 战败文案中文, 战败文案英文)
 ENCOUNTERS = {
-    'PatrolWeak': ('纠察队巡逻', 'Patrol', '{character}倒在了[gold]{encounter}[/gold]的警棍下。', '{character} fell to the batons of the [gold]{encounter}[/gold].'),
+    'PatrolWeak': ('纠察巡逻队（先遣）', 'Patrol Squad (Advance)', '{character}倒在了[gold]{encounter}[/gold]的武器下。', '{character} fell to the weapons of the [gold]{encounter}[/gold].'),
     'RavagersWeak': ('裂兽', 'Ravagers', '{character}被[gold]{encounter}[/gold]撕碎了。', '{character} was torn apart by [gold]{encounter}[/gold].'),
     'ArmoredCasterWeak': ('着铠术师', 'Armored Caster', '{character}倒在了[gold]{encounter}[/gold]的法术之下。', '{character} fell to the arts of an [gold]{encounter}[/gold].'),
-    'HuskVillageSearchNormal': ('谷壳村搜捕', 'Husk Village Search', '{character}没能走出[gold]{encounter}[/gold]。', '{character} never made it out of the [gold]{encounter}[/gold].'),
+    'HuskVillageSearchNormal': ('纠察巡逻队（精锐）', 'Patrol Squad (Elite)', '{character}没能突破[gold]{encounter}[/gold]的封锁。', '{character} could not break through the [gold]{encounter}[/gold].'),
     'RavagerPackNormal': ('裂兽群', 'Ravager Pack', '{character}被[gold]{encounter}[/gold]撕碎了。', '{character} was torn apart by a [gold]{encounter}[/gold].'),
     'CrossbowmenNormal': ('突袭弩手', 'Raid Crossbowmen', '{character}倒在了[gold]{encounter}[/gold]的弩箭下。', '{character} fell to the bolts of the [gold]{encounter}[/gold].'),
     'CasterSquadNormal': ('术师小队', 'Caster Squad', '{character}倒在了[gold]{encounter}[/gold]的法术之下。', '{character} fell to the arts of a [gold]{encounter}[/gold].'),
@@ -40,9 +40,11 @@ ENCOUNTERS = {
 # 类名: ((中文名, 英文名), {招式键: (中文, 英文)})
 MONSTERS = {
     'InfectedPatrolOfficer': (('感染者纠察官', 'Infected Patrol Officer'),
-                              {'BATON': ('警棍', 'Baton'), 'SHOOT': ('射击', 'Shoot'), 'SEARCH': ('搜捕', 'Search')}),
+                              {'NET': ('抛网', 'Cast Net'), 'LASH': ('抽打', 'Lash'),
+                               'RELOAD_SHOOT': ('装填射击', 'Reload and Fire'), 'ARM': ('武装', 'Arm Up')}),
     'SeniorPatrolOfficer': (('感染者高级纠察官', 'Senior Patrol Officer'),
-                            {'ESCORT': ('押送', 'Escort'), 'HEAVY_BLOW': ('重击', 'Heavy Blow'), 'COMBO': ('连击', 'Combo')}),
+                            {'DOZE': ('打盹', 'Doze'), 'ENRAGE': ('激怒', 'Enrage'),
+                             'ESCORT': ('押运', 'Escort'), 'DISRUPT': ('干扰', 'Disrupt')}),
     'UrsusRavager': (('乌萨斯裂兽', 'Ursus Ravager'),
                      {'BITE': ('撕咬', 'Bite'), 'ALERT': ('警戒', 'Alert'), 'POUNCE': ('扑击', 'Pounce')}),
     'RavagerMatriarch': (('乌萨斯裂兽族母', 'Ravager Matriarch'),
@@ -82,15 +84,33 @@ MONSTERS = {
 
 # 类名: (中文标题, 英文标题, 中文说明, 英文说明, 中文 smart, 英文 smart)
 POWERS = {
+    'IntelligenceGatheringPower': (
+        '情报获取', 'Intelligence Gathering',
+        '回合结束时，每有一名己方感染者纠察官存活，获得[gold]情报[/gold]和[gold]力量[/gold]。',
+        'At the end of its turn, gains [gold]Intelligence[/gold] and [gold]Strength[/gold] for each living allied Infected Patrol Officer.',
+        '回合结束时，每有一名己方感染者纠察官存活，获得[blue]{Amount}[/blue]层[gold]情报[/gold]和[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'At the end of its turn, gains [blue]{Amount}[/blue] [gold]Intelligence[/gold] and [blue]{Amount}[/blue] [gold]Strength[/gold] for each living allied Infected Patrol Officer.'),
+    'IntelligencePower': (
+        '情报', 'Intelligence',
+        '获得[gold]力量[/gold]。感染者纠察官死亡时，失去该名纠察官贡献的[gold]情报[/gold]与对应的[gold]力量[/gold]。',
+        'Grants [gold]Strength[/gold]. When an Infected Patrol Officer dies, lose the [gold]Intelligence[/gold] it contributed and the corresponding [gold]Strength[/gold].',
+        '获得[blue]{Amount}[/blue]点[gold]力量[/gold]。感染者纠察官死亡时，失去该名纠察官贡献的[gold]情报[/gold]与对应的[gold]力量[/gold]。',
+        'Grants [blue]{Amount}[/blue] [gold]Strength[/gold]. When an Infected Patrol Officer dies, lose the [gold]Intelligence[/gold] it contributed and the corresponding [gold]Strength[/gold].'),
+    'TrappedPower': (
+        '被困', 'Trapped',
+        '本回合不能打出[gold]攻击牌[/gold]。',
+        'Cannot play [gold]Attacks[/gold] this turn.',
+        '本回合不能打出[gold]攻击牌[/gold]。',
+        'Cannot play [gold]Attacks[/gold] this turn.'),
     'RendPower': (
         '撕裂', 'Rend',
-        '每次对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        '每次对你造成未被格挡的攻击伤害时，你将在下回合失去[gold]力量[/gold]。',
         'Whenever it deals unblocked attack damage to you, lose [blue]{Amount}[/blue] [gold]Strength[/gold] next turn.',
         '每当[gold]{OwnerName}[/gold]对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
         'Whenever [gold]{OwnerName}[/gold] deals unblocked attack damage to you, lose [blue]{Amount}[/blue] [gold]Strength[/gold] next turn.'),
     'TraumaPower': (
         '创伤', 'Trauma',
-        '本回合内失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        '本回合内失去[gold]力量[/gold]。',
         'Lose [blue]{Amount}[/blue] [gold]Strength[/gold] this turn.',
         '本回合内失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
         'Lose [blue]{Amount}[/blue] [gold]Strength[/gold] this turn.'),
@@ -98,7 +118,7 @@ POWERS = {
         '族群意识', 'Pack Instinct',
         '每当一只乌萨斯裂兽死亡时，自身获得[gold]力量[/gold]。',
         'Whenever an allied Ursus Ravager dies, gains [gold]Strength[/gold].',
-        '每当一只乌萨斯裂兽死亡时，自身获得[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        '每当一只[gold]乌萨斯裂兽[/gold]死亡时，自身获得[blue]{Amount}[/blue]点[gold]力量[/gold]。',
         'Whenever an allied Ursus Ravager dies, gains [blue]{Amount}[/blue] [gold]Strength[/gold].'),
     'FlareRebirthPower': (
         '重生', 'Rebirth',
@@ -168,6 +188,12 @@ POWERS = {
 # 卡牌侵蚀，类名: (中文标题, 英文标题, 中文说明, 英文说明, 中文卡面附加文字, 英文卡面附加文字)
 # 措辞照原版流电（GALVANIZED）：“打出这张牌时受到X点伤害。” / 卡面“受到X点伤害。”
 AFFLICTIONS = {
+    'Trapped': (
+        '被困', 'Trapped',
+        '本回合不能打出[gold]攻击牌[/gold]。',
+        'Cannot play [gold]Attacks[/gold] this turn.',
+        '本回合不能打出。',
+        'Cannot be played this turn.'),
     'Ignited': (
         '引燃', 'Ignited',
         '打出这张牌时受到[blue]{Amount}[/blue]点伤害。',

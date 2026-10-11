@@ -1,7 +1,10 @@
+using ArknightsRoaringFlare.Afflictions;
+using ArknightsRoaringFlare.Powers;
 using ArknightsRoaringFlare.Vfx;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
@@ -10,17 +13,28 @@ namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
 /// 感染者纠察官（PRTS enemy_1107_uoffcr），乌萨斯纠察队的杂兵，第八章出场最多的敌人。
-/// 招式与数值见 docs/设计文档.md：警棍、射击（两段）、搜捕（格挡 + 玩家虚弱）三招随机、不连用。
+/// 抛网、抽打、装填射击、武装四招；先遣与精锐巡逻队使用两条固定循环，其余遭遇随机、不连用。
 /// </summary>
 public sealed class InfectedPatrolOfficer : FlareMonster
 {
-	public const string BatonMoveId = "BATON_MOVE";
-	public const string ShootMoveId = "SHOOT_MOVE";
-	public const string SearchMoveId = "SEARCH_MOVE";
+	public const string NetMoveId = "NET_MOVE";
+	public const string LashMoveId = "LASH_MOVE";
+	public const string ReloadShootMoveId = "RELOAD_SHOOT_MOVE";
+	public const string ArmMoveId = "ARM_MOVE";
 
-	private const int ShootHits = 2;
-	private const int SearchBlock = 6;
-	private const int SearchWeak = 1;
+	private const int TrappedAmount = 1;
+	private const int LashWeak = 1;
+	private const int ShootHits = 4;
+	private const int ShootStrength = 1;
+	private const int ArmBlock = 15;
+	private string[]? _fixedCycle;
+
+	/// <summary>由巡逻队遭遇在状态机建立前指定完整循环，数组第一项即起手。</summary>
+	public void SetFixedCycle(params string[] moveIds)
+	{
+		AssertMutable();
+		_fixedCycle = [.. moveIds];
+	}
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.5f;
@@ -46,31 +60,62 @@ public sealed class InfectedPatrolOfficer : FlareMonster
 
 	public override IReadOnlyList<string> RequiredAnimations => ["Idle", AttackAnimation, "Die"];
 
-	public override int MinInitialHp => ToughValue(53, 50);
+	public override IEnumerable<string> AssetPaths => base.AssetPaths.Append(ModelDb.Affliction<Trapped>().OverlayPath);
 
-	public override int MaxInitialHp => ToughValue(57, 54);
+	public override int MinInitialHp => ToughValue(65, 62);
 
-	private int BatonDamage => DeadlyValue(12, 11);
+	public override int MaxInitialHp => ToughValue(69, 66);
 
-	private int ShootDamage => DeadlyValue(7, 6);
+	private int LashDamage => DeadlyValue(11, 10);
+
+	private int ShootDamage => DeadlyValue(4, 3);
+
+	private int ArmDamage => DeadlyValue(7, 6);
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
-		MoveState baton = new(BatonMoveId, BatonMove, new SingleAttackIntent(BatonDamage));
-		MoveState shoot = new(ShootMoveId, ShootMove, new MultiAttackIntent(ShootDamage, ShootHits));
-		MoveState search = new(SearchMoveId, SearchMove, new DefendIntent(), new DebuffIntent());
-		return RandomMachine("PATROL_RANDOM", [baton, shoot, search]);
+		MoveState net = new(NetMoveId, NetMove, new CardDebuffIntent());
+		MoveState lash = new(LashMoveId, LashMove, new SingleAttackIntent(LashDamage), new DebuffIntent());
+		MoveState shoot = new(ReloadShootMoveId, ReloadShootMove, new MultiAttackIntent(ShootDamage, ShootHits), new BuffIntent());
+		MoveState arm = new(ArmMoveId, ArmMove, new SingleAttackIntent(ArmDamage), new DefendIntent());
+		MoveState[] moves = [net, lash, shoot, arm];
+		if (_fixedCycle is null)
+		{
+			return RandomMachine("PATROL_RANDOM", moves);
+		}
+
+		MoveState[] cycle = _fixedCycle.Select(id => moves.Single(move => move.Id == id)).ToArray();
+		for (int i = 0; i < cycle.Length; i++)
+		{
+			cycle[i].FollowUpState = cycle[(i + 1) % cycle.Length];
+		}
+
+		return Build(moves, cycle[0]);
 	}
 
-	private Task BatonMove(IReadOnlyList<Creature> targets) => Strike(BatonDamage, vfx: BluntVfx);
-
-	private Task ShootMove(IReadOnlyList<Creature> targets) => Strike(ShootDamage, ShootHits, BluntVfx, RangedHitSfx);
-
-	private async Task SearchMove(IReadOnlyList<Creature> targets)
+	private async Task NetMove(IReadOnlyList<Creature> targets)
 	{
+		await PacedAnim(CreatureAnimator.attackTrigger, AttackHitDelay);
+		await ApplyPower<TrappedPower>(targets, TrappedAmount);
+	}
+
+	private async Task LashMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(LashDamage, vfx: BluntVfx);
+		await ApplyPower<WeakPower>(targets, LashWeak);
+	}
+
+	private async Task ReloadShootMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(ShootDamage, ShootHits, BluntVfx, RangedHitSfx);
 		BuffCue();
-		await GainBlock(SearchBlock);
-		await ApplyPower<WeakPower>(targets, SearchWeak);
+		await ApplyStrengthToSelf(ShootStrength);
+	}
+
+	private async Task ArmMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(ArmDamage, vfx: BluntVfx);
+		await GainBlock(ArmBlock);
 	}
 
 	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>

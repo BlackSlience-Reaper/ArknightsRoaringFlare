@@ -5,11 +5,12 @@
   python3 opening_sim.py --search 为每场重新挑起手位置（按下面的 TARGET 打分），改阵容或数值后用
 
 招式与数值同步 docs/设计文档.md 与实现；玩家不格挡、不攻击、不击杀敌人，只统计攻击伤害。
-起手写在 OPENINGS 里，实现后必须与遭遇战的 SetOpenings 一致（值 = 招式序号）。
+起手写在 OPENINGS 里，必须与遭遇战的 SetOpenings 或固定循环第一招一致（值 = 招式序号，从 0 开始）。
 随机出招的怪第一招取 moves[偏移]，之后在其余招里等权随机、不连用（同苦难摇篮的 RandomMachine）。
 只算攻击伤害：烈焚灼息（每回合结束扣血）、炮击标记延迟落地、国度这类伤害或削弱在 docs/战斗设计.md 里单独估算。
 """
 import sys
+from dataclasses import replace
 from itertools import product
 
 from sim_core import V, Move, Rand, cycle, random_kind, simulate, summarize
@@ -27,10 +28,18 @@ def rand(*moves):
 
 
 # 招式：(招式名, Move)。数值 (A0, A10)。
+PATROL_MOVES = (("抛网", A()), ("抽打", A(V(10, 11), 1)),
+                ("装填射击", A(V(3, 4), 4, self_str=V(1))), ("武装", A(V(6, 7), 1)))
+SENIOR_DOZE_ROUNDS = 3
+INTELLIGENCE_PER_OFFICER = V(1)
 M = {
     # —— 纠察队 ——
-    "纠察官": rand(("警棍", A(V(11, 12), 1)), ("射击", A(V(6, 7), 2)), ("搜捕", A())),
-    "高级纠察官": fixed(("押送", A()), ("重击", A(V(15, 16), 1)), ("连击", A(V(7, 8), 2))),
+    "纠察官": rand(*PATROL_MOVES),
+    # 先遣与精锐巡逻队共用这两种循环，招式索引都按文档的 1/2/3/4。
+    "先遣纠察官（左）": fixed(*PATROL_MOVES),
+    "先遣纠察官（右）": fixed(*PATROL_MOVES),
+    "高级纠察官": fixed(("打盹", A()), ("激怒", A(V(14, 16), 1)),
+                          ("押运", A()), ("干扰", A(V(4, 6), 1))),
     # —— 裂兽 ——
     "裂兽": fixed(("撕咬", A(V(6, 8), 1)), ("警戒", A(self_str=V(2))), ("扑击", A(V(6, 7), 2))),
     "裂兽族母": fixed(("召集", A(summon="裂兽", summon_vigor=V(3, 5))), ("治愈", A()),
@@ -65,7 +74,26 @@ def build_kinds() -> dict:
 
 
 KINDS = build_kinds()
+KINDS["先遣纠察官（右）"].next = cycle([PATROL_MOVES[i] for i in (2, 1, 3, 0)]).next
 KINDS["塔露拉"].next["引爆"] = "噬咬"  # 点燃只在开局
+
+
+def gather_intelligence(mon, world, asc):
+    officers = ("纠察官", "先遣纠察官（左）", "先遣纠察官（右）")
+    living = [m.order for m in world if m.kind in officers]
+    contributions = {source: amount for source, amount in mon.intelligence_contributions if source in living}
+    for source in living:
+        contributions[source] = contributions.get(source, 0) + INTELLIGENCE_PER_OFFICER[asc]
+    strength = len(living) * INTELLIGENCE_PER_OFFICER[asc]
+    return replace(mon, strength=mon.strength + strength, temporary_strength=sum(contributions.values()),
+                   intelligence_contributions=tuple(sorted(contributions.items())))
+
+
+KINDS["高级纠察官"].next = {
+    "打盹": lambda mon, world: "打盹" if len(mon.history) < SENIOR_DOZE_ROUNDS else "激怒",
+    "激怒": "干扰", "干扰": "押运", "押运": "激怒",
+}
+KINDS["高级纠察官"].end_turn = gather_intelligence
 
 
 def matriarch_next(mon, world):
@@ -82,10 +110,10 @@ KINDS["裂兽族母"].summon_start = lambda world, kind: Rand((("撕咬", 1, 0),
 
 # 阵容 = 种类列表，或种类列表的列表（随机阵容，等概率）。站位从左到右即出手顺序。
 ENCOUNTERS = {
-    "弱|纠察队巡逻": ["纠察官", "纠察官"],
+    "弱|纠察巡逻队（先遣）": ["先遣纠察官（左）", "先遣纠察官（右）"],
     "弱|裂兽": ["裂兽", "裂兽", "裂兽"],
     "弱|着铠术师": ["着铠术师"],
-    "普|谷壳村搜捕": ["纠察官", "纠察官", "高级纠察官"],
+    "普|纠察巡逻队（精锐）": ["先遣纠察官（左）", "先遣纠察官（右）", "高级纠察官"],
     "普|裂兽群": ["裂兽族母"],
     "普|突袭弩手": ["突袭弩手", "突袭弩手"],
     "普|术师小队": ["着铠术师", "高级着铠术师"],
@@ -101,10 +129,10 @@ ENCOUNTERS = {
 }
 # 每场的起手偏移：固定阵容按站位；随机阵容按种类（{种类: 偏移}，未列出的为 0）。
 OPENINGS = {key: tuple(0 for _ in (v if not isinstance(v[0], list) else v[0])) for key, v in ENCOUNTERS.items()}
-OPENINGS.update({"普|沉默的屠夫": (2,), "普|突击者队长": (2,), "精|百战精锐": (1, 0), "弱|纠察队巡逻": (1, 2), "弱|裂兽": (0, 1, 2), "弱|着铠术师": (1,), "普|谷壳村搜捕": (0, 2, 0), "普|裂兽群": (0,), "普|突袭弩手": (0, 1), "普|术师小队": (0, 2), "普|突击者小队": (2, 0), "普|牵引的炮火": (0, 0), "普|宿主百夫长": (2, 2), "精|皇帝的利刃": (2,), "精|中枢先兆者": (1, 0),
+OPENINGS.update({"普|沉默的屠夫": (2,), "普|突击者队长": (2,), "精|百战精锐": (0, 0), "弱|纠察巡逻队（先遣）": (3, 2), "弱|裂兽": (0, 1, 2), "弱|着铠术师": (1,), "普|纠察巡逻队（精锐）": (3, 2, 0), "普|裂兽群": (0,), "普|突袭弩手": (0, 1), "普|术师小队": (0, 2), "普|突击者小队": (2, 1), "普|牵引的炮火": (1, 0), "普|宿主百夫长": (2, 2), "精|皇帝的利刃": (2,), "精|中枢先兆者": (1, 0),
 })
 # 固定起手（不参与搜索）：先兆者先标定（炮击前一回合预告）；塔露拉开场先点燃（施加烈焚灼息）。
-FIXED = {"炮火先兆者": [0], "炮火中枢先兆者": [0], "塔露拉": [0], "裂兽族母": [0]}
+FIXED = {"炮火先兆者": [0], "炮火中枢先兆者": [0], "塔露拉": [0], "裂兽族母": [0], "高级纠察官": [0]}
 
 
 def lineups_of(key):
@@ -146,7 +174,7 @@ def score(kind, s):
 
 def search(key):
     kind = key.split("|")[0]
-    if key in ("弱|裂兽", "普|裂兽群"):
+    if key in ("弱|纠察巡逻队（先遣）", "普|纠察巡逻队（精锐）", "弱|裂兽", "普|裂兽群"):
         openings = OPENINGS[key]
         s = run(key, openings, 0)
         return ((round(score(kind, s), 1), sum(1 for c in openings if c)), openings, s)

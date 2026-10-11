@@ -11,12 +11,12 @@ namespace ArknightsRoaringFlare.Encounters;
 
 // 怒号光明的战斗池，规模照原版荣耀：弱 3、普通 9、精英 3，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
 // 组成、总血量与对照原版的难度见 docs/设计文档.md。起手偏移（SetOpenings）与 docs/tools/opening_sim.py 的 OPENINGS 同步；
-// 裂兽按设计固定以 1/2/3 起手，族母固定召集开场，其余起手由开局模拟挑选。
+// 先遣与精锐巡逻队的普通纠察官共用完整循环，高级纠察官前三回合打盹；裂兽固定以 1/2/3 起手，族母固定召集开场。
 // 同一场里的同种怪起手一律错开（模拟器硬约束，自检核对）。站位从左到右就是出手顺序，给自己叠力量的头目站最右。
 
 // ---- 弱怪 ----
 
-/// <summary>R8-1 昨日，谷壳将裂：纠察队巡逻，纠察官 ×2（一射击一搜捕起手，之后随机出招）。</summary>
+/// <summary>纠察巡逻队（先遣）：纠察官 ×2，分别以 4→1→2→3、3→2→4→1 循环。</summary>
 public sealed class PatrolWeak : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
@@ -27,7 +27,15 @@ public sealed class PatrolWeak : FlareEncounter
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<InfectedPatrolOfficer>(), M<InfectedPatrolOfficer>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 2);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters)
+	{
+		((InfectedPatrolOfficer)monsters[0]).SetFixedCycle(
+			InfectedPatrolOfficer.ArmMoveId, InfectedPatrolOfficer.NetMoveId,
+			InfectedPatrolOfficer.LashMoveId, InfectedPatrolOfficer.ReloadShootMoveId);
+		((InfectedPatrolOfficer)monsters[1]).SetFixedCycle(
+			InfectedPatrolOfficer.ReloadShootMoveId, InfectedPatrolOfficer.LashMoveId,
+			InfectedPatrolOfficer.ArmMoveId, InfectedPatrolOfficer.NetMoveId);
+	}
 }
 
 /// <summary>裂兽 ×3，分别以撕咬、警戒、扑击开场，之后按三招循环。</summary>
@@ -60,7 +68,7 @@ public sealed class ArmoredCasterWeak : FlareEncounter
 
 // ---- 普通 ----
 
-/// <summary>R8-1 昨日，谷壳将裂：谷壳村搜捕，纠察官 ×2 + 高级纠察官（高级纠察官先押送，站最右）。</summary>
+/// <summary>纠察巡逻队（精锐）：纠察官 ×2 + 高级纠察官（前三回合打盹，站最右）。</summary>
 public sealed class HuskVillageSearchNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
@@ -70,7 +78,15 @@ public sealed class HuskVillageSearchNormal : FlareEncounter
 	protected override IReadOnlyList<MonsterModel> Lineup =>
 		[M<InfectedPatrolOfficer>(), M<InfectedPatrolOfficer>(), M<SeniorPatrolOfficer>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2, 0);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters)
+	{
+		((InfectedPatrolOfficer)monsters[0]).SetFixedCycle(
+			InfectedPatrolOfficer.ArmMoveId, InfectedPatrolOfficer.NetMoveId,
+			InfectedPatrolOfficer.LashMoveId, InfectedPatrolOfficer.ReloadShootMoveId);
+		((InfectedPatrolOfficer)monsters[1]).SetFixedCycle(
+			InfectedPatrolOfficer.ReloadShootMoveId, InfectedPatrolOfficer.LashMoveId,
+			InfectedPatrolOfficer.ArmMoveId, InfectedPatrolOfficer.NetMoveId);
+	}
 }
 
 /// <summary>裂兽群：族母独自以召集开场，三个裂兽槽在前，族母最后出手。</summary>
@@ -122,7 +138,7 @@ public sealed class CommandoSquadNormal : FlareEncounter
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusCommando>(), M<InfectedPatrolOfficer>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2, 0);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2, 1);
 }
 
 /// <summary>R8-7 牵引的炮火：纠察官 + 炮火先兆者（先标定，下一回合炮击）。</summary>
@@ -132,7 +148,7 @@ public sealed class GuidedArtilleryNormal : FlareEncounter
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<InfectedPatrolOfficer>(), M<ArtilleryHarbinger>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 0);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 0);
 }
 
 /// <summary>R8-10 沉默的屠夫：帝国前锋精锐单体（先战意）。</summary>
@@ -177,14 +193,14 @@ public sealed class EmperorsBladeElite : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
 }
 
-/// <summary>R8-11 落雪，浸黑国土：高级纠察官（先重击）+ 帝国前锋百战精锐。</summary>
+/// <summary>R8-11 落雪，浸黑国土：高级纠察官（前三回合打盹）+ 帝国前锋百战精锐。</summary>
 public sealed class VanguardVeteranElite : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Elite;
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<SeniorPatrolOfficer>(), M<VanguardVeteran>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 0);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 0);
 }
 
 /// <summary>R8-8 人心，向背无常：着铠术师（先法术连击）+ 帝国炮火中枢先兆者（先标定）。</summary>

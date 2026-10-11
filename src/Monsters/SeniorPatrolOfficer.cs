@@ -1,7 +1,9 @@
+using ArknightsRoaringFlare.Powers;
 using ArknightsRoaringFlare.Vfx;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
@@ -10,17 +12,21 @@ namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
 /// 感染者高级纠察官（PRTS enemy_1107_uoffcr_2），纠察官的强化版。
-/// 招式与数值见 docs/设计文档.md：押送（格挡 + 玩家脆弱）→ 重击 → 连击（两段）。
+/// 前三回合打盹，之后激怒 → 干扰 → 押运循环；携带情报获取与覆甲。
 /// </summary>
 public sealed class SeniorPatrolOfficer : FlareMonster
 {
+	public const string DozeMoveId = "DOZE_MOVE";
+	public const string EnrageMoveId = "ENRAGE_MOVE";
 	public const string EscortMoveId = "ESCORT_MOVE";
-	public const string HeavyBlowMoveId = "HEAVY_BLOW_MOVE";
-	public const string ComboMoveId = "COMBO_MOVE";
+	public const string DisruptMoveId = "DISRUPT_MOVE";
 
-	private const int ComboHits = 2;
-	private const int EscortBlock = 8;
+	private const int DozeRounds = 3;
+	private const int IntelligenceAmount = 1;
+	private const int PlatingAmount = 13;
+	private const int EscortBlock = 12;
 	private const int EscortFrail = 1;
+	private const int DisruptDazed = 3;
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.5f;
@@ -45,23 +51,36 @@ public sealed class SeniorPatrolOfficer : FlareMonster
 
 	public override IReadOnlyList<string> RequiredAnimations => ["Idle", AttackAnimation, "Die"];
 
-	public override int MinInitialHp => ToughValue(74, 70);
+	public override int MinInitialHp => ToughValue(94, 91);
 
-	public override int MaxInitialHp => ToughValue(78, 74);
+	public override int MaxInitialHp => ToughValue(98, 95);
 
-	private int HeavyBlowDamage => DeadlyValue(16, 15);
+	private int EnrageDamage => DeadlyValue(16, 14);
 
-	private int ComboDamage => DeadlyValue(8, 7);
+	private int DisruptDamage => DeadlyValue(6, 4);
+
+	public override async Task AfterAddedToRoom()
+	{
+		await base.AfterAddedToRoom();
+		await ApplyPower<IntelligenceGatheringPower>([Creature], IntelligenceAmount);
+		await ApplyPower<PlatingPower>([Creature], PlatingAmount);
+	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
+		MoveState doze = new(DozeMoveId, _ => Task.CompletedTask, new SleepIntent());
+		MoveState enrage = new(EnrageMoveId, EnrageMove, new SingleAttackIntent(EnrageDamage));
 		MoveState escort = new(EscortMoveId, EscortMove, new DefendIntent(), new DebuffIntent());
-		MoveState heavy = new(HeavyBlowMoveId, HeavyBlowMove, new SingleAttackIntent(HeavyBlowDamage));
-		MoveState combo = new(ComboMoveId, ComboMove, new MultiAttackIntent(ComboDamage, ComboHits));
-		escort.FollowUpState = heavy;
-		heavy.FollowUpState = combo;
-		combo.FollowUpState = escort;
-		return Machine([escort, heavy, combo], escort);
+		MoveState disrupt = new(DisruptMoveId, DisruptMove, new SingleAttackIntent(DisruptDamage), new StatusIntent(DisruptDazed));
+		ConditionalBranchState afterDoze = new("AFTER_DOZE");
+		// 原版在新玩家回合开始、RoundNumber 已递增后选择本回合的敌人招式。
+		afterDoze.AddState(doze, () => CombatState.RoundNumber <= DozeRounds);
+		afterDoze.AddState(enrage, () => true);
+		doze.FollowUpState = afterDoze;
+		enrage.FollowUpState = disrupt;
+		disrupt.FollowUpState = escort;
+		escort.FollowUpState = enrage;
+		return Build([doze, enrage, escort, disrupt, afterDoze], doze);
 	}
 
 	private async Task EscortMove(IReadOnlyList<Creature> targets)
@@ -71,9 +90,13 @@ public sealed class SeniorPatrolOfficer : FlareMonster
 		await ApplyPower<FrailPower>(targets, EscortFrail);
 	}
 
-	private Task HeavyBlowMove(IReadOnlyList<Creature> targets) => Strike(HeavyBlowDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
+	private Task EnrageMove(IReadOnlyList<Creature> targets) => Strike(EnrageDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
 
-	private Task ComboMove(IReadOnlyList<Creature> targets) => Strike(ComboDamage, ComboHits, BluntVfx);
+	private async Task DisruptMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(DisruptDamage, vfx: BluntVfx, sfx: RangedHitSfx);
+		await AddStatusCards<Dazed>(targets, DisruptDazed);
+	}
 
 	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>
 		BuildAnimator(controller, "Idle", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));

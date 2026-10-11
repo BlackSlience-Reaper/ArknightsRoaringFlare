@@ -1,4 +1,13 @@
 {
+  "ARKNIGHTS_ROARING_FLARE_POWER_INTELLIGENCE_GATHERING_POWER.title": "情报获取",
+  "ARKNIGHTS_ROARING_FLARE_POWER_INTELLIGENCE_GATHERING_POWER.description": "回合结束时，每有一名己方感染者纠察官存活，获得[gold]情报[/gold]和[gold]力量[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_INTELLIGENCE_GATHERING_POWER.smartDescription": "回合结束时，每有一名己方感染者纠察官存活，获得[blue]{Amount}[/blue]层[gold]情报[/gold]和[blue]{Amount}[/blue]点[gold]力量[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_INTELLIGENCE_POWER.title": "情报",
+  "ARKNIGHTS_ROARING_FLARE_POWER_INTELLIGENCE_POWER.description": "获得[gold]力量[/gold]。感染者纠察官死亡时，失去对应的[gold]力量[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_INTELLIGENCE_POWER.smartDescription": "获得[blue]{Amount}[/blue]点[gold]力量[/gold]。感染者纠察官死亡时，失去其贡献的[gold]力量[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_TRAPPED_POWER.title": "被困",
+  "ARKNIGHTS_ROARING_FLARE_POWER_TRAPPED_POWER.description": "本回合不能打出[gold]攻击牌[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_TRAPPED_POWER.smartDescription": "本回合不能打出[gold]攻击牌[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.title": "撕裂",
   "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.description": "每次对你造成未被格挡的攻击伤害时，你将在下回合失去[gold]力量[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_POWER_REND_POWER.smartDescription": "每当[gold]{OwnerName}[/gold]对你造成未被格挡的攻击伤害时，你将在下回合失去[blue]{Amount}[/blue]点[gold]力量[/gold]。",

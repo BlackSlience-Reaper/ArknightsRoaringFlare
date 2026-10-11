@@ -1,4 +1,7 @@
 {
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.title": "被困",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.description": "本回合不能打出[gold]攻击牌[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.extraCardText": "本回合不能被打出。",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.title": "引燃",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.description": "打出这张牌时受到[blue]{Amount}[/blue]点伤害。",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.extraCardText": "受到{Amount}点伤害。"

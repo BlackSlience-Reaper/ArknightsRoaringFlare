@@ -3,7 +3,7 @@
 口径：
 - 玩家不出格挡、不打怪、不死怪，只算前 N 个敌方回合每回合玩家要承受的攻击伤害。
 - 难度 0 = A0（无进阶），1 = A10（含“更强的敌人”A8 与“更致命的敌人”A9）。数值写成 (A0, A10)。
-- 攻击伤害 =（基础 + 自身力量 + 其他盟友的领袖气质（开场层数 + 招式叠加的层数））× 段数；玩家带易伤时每段 ×1.5 向下取整。
+- 攻击伤害 =（基础 + 自身永久与临时力量 + 其他盟友的领袖气质（开场层数 + 招式叠加的层数））× 段数；玩家带易伤时每段 ×1.5 向下取整。
   易伤层数叠加，在敌方回合结束时掉 1 层（原版 VulnerablePower 在敌方回合结束 TickDownDuration）；
   新挂到玩家身上的减益跳过第一次掉层（PowerCmd.Apply 设 SkipNextDurationTick，叠到已有层数上不跳），
   所以 1 层易伤会覆盖挂上的这个敌方回合剩下的出手，再加完整的下一个敌方回合。
@@ -56,6 +56,7 @@ class Kind:
     summon_cap: int = 0  # 这种怪最多同时召唤几只（受遭遇战空槽限制）
     summon_start: Callable | None = None  # (world, summoned_kind) -> 起手招或 Rand
     summon_front: bool = False  # 召唤物按槽位排到召唤者前面（召唤者占遭遇战最后一个槽）
+    end_turn: Callable | None = None  # (monster, world, asc) -> monster，全部怪物出手后结算自身回合末能力
 
 
 def cycle(moves: list[tuple[str, Move]], **kw) -> Kind:
@@ -80,6 +81,8 @@ class Mon:
     lead: int = 0  # 招式叠加的领袖气质（开场层数在 Kind.leadership）
     order: float = 0.0  # 出手顺序键，敌方回合结束时按它重排（模拟原版按槽位排序）
     vigor: int = 0
+    temporary_strength: int = 0  # 与永久力量分开；情报力量随贡献者存活而保留
+    intelligence_contributions: tuple = ()  # (来源站位, 累计情报)，按纠察官分别记账
 
 
 def _branch(kinds: dict, mon: Mon, world: tuple, nxt: Next) -> list[tuple[float, str]]:
@@ -123,7 +126,10 @@ def _turn(kinds, mons, vuln, t, asc):
 
     def step(k, mons, vuln, total, p):
         if k == len(actors):
-            results.append((p, (tuple(mons), vuln, total)))
+            world = tuple(mons)
+            ended = tuple(kinds[m.kind].end_turn(m, world, asc)
+                          if m.start <= t and kinds[m.kind].end_turn else m for m in mons)
+            results.append((p, (ended, vuln, total)))
             return
         i = actors[k]
         m = mons[i]
@@ -132,7 +138,7 @@ def _turn(kinds, mons, vuln, t, asc):
         mons = list(mons)
         if mv.hits:
             lead = sum(kinds[o.kind].leadership[asc] + o.lead for j, o in enumerate(mons) if j != i and o.start <= t)
-            per = mv.dmg[asc] + m.strength + lead + m.vigor
+            per = mv.dmg[asc] + m.strength + m.temporary_strength + lead + m.vigor
             if vuln[0] > 0:
                 per = int(per * 1.5)
             total += max(0, per) * mv.hits
