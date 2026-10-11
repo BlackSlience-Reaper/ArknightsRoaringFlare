@@ -64,7 +64,7 @@ public abstract class FlareMonster : ModMonsterTemplate
 	/// <summary>
 	/// 一个招式槽对应的原作特效（Vfx.AkFx，从原作资源包转出）：Start 在招式开始时播在自己身上；Hit 每段命中播在目标身上；
 	/// 给了 Projectile 时改为每段命中前从 ProjectileBone（枪口骨骼，没有就从受击点）射出投射物，飞到后才播 Hit 并结算伤害
-	/// （原作远程攻击就是命中时结算）。速度是原作的世界单位/秒，Arc 是抛物线高度（世界单位）。
+	/// （原作远程攻击就是命中时结算）。速度是原作的世界单位/秒，Arc 是抛物线高度（世界单位），ProjectileTune 是投射物的手调。
 	/// </summary>
 	protected readonly record struct FlareFx(
 		FxCue[]? Start = null,
@@ -72,7 +72,8 @@ public abstract class FlareMonster : ModMonsterTemplate
 		string? Projectile = null,
 		int ProjectileBone = -1,
 		float ProjectileSpeed = 10f,
-		float ProjectileArc = 0f);
+		float ProjectileArc = 0f,
+		FxTune? ProjectileTune = null);
 
 	/// <summary>槽 → 原作特效。各怪物照原作预制体里招式节点列出的特效覆盖（battle/enm_pfb_*，见 tools/ak_vfx/）。</summary>
 	protected virtual FlareFx FxFor(string slot) => default;
@@ -321,7 +322,7 @@ public abstract class FlareMonster : ModMonsterTemplate
 					foreach (Creature target in CombatState.GetOpponentsOf(Creature).Where(c => c.IsAlive))
 					{
 						flight = Math.Max(flight, AkFx.ProjectileTo(Creature, Rig, target, projectile, fx.ProjectileBone,
-							fx.ProjectileSpeed, fx.ProjectileArc, fx.Hit));
+							fx.ProjectileSpeed, fx.ProjectileArc, fx.Hit, fx.ProjectileTune));
 					}
 
 					if (flight > 0f)
@@ -371,7 +372,7 @@ public abstract class FlareMonster : ModMonsterTemplate
 	/// <summary>开发预览用：招式以外的特效组（倒地、重整等），按名字给；默认没有。</summary>
 	protected virtual FxCue[]? PreviewCues(string slot) => null;
 
-	internal (float Graphic, Godot.Vector2 HitPoint, FxCue[] Start, FxCue[] Hit, string? Projectile, int Bone, float Speed, float Arc, float AttackDelay) PreviewFx(string slot)
+	internal (float Graphic, Godot.Vector2 HitPoint, FxCue[] Start, FxCue[] Hit, string? Projectile, int Bone, float Speed, float Arc, FxTune? Tune, float AttackDelay) PreviewFx(string slot)
 	{
 		FlareFx fx = slot switch
 		{
@@ -380,7 +381,7 @@ public abstract class FlareMonster : ModMonsterTemplate
 			_ when PreviewCues(slot) is { } cues => new FlareFx(Start: cues),
 			_ => FxFor(slot),
 		};
-		return (Rig.GraphicScale, Rig.HitPoint, fx.Start ?? [], fx.Hit ?? [], fx.Projectile, fx.ProjectileBone, fx.ProjectileSpeed, fx.ProjectileArc, AttackHitDelay);
+		return (Rig.GraphicScale, Rig.HitPoint, fx.Start ?? [], fx.Hit ?? [], fx.Projectile, fx.ProjectileBone, fx.ProjectileSpeed, fx.ProjectileArc, fx.ProjectileTune, AttackHitDelay);
 	}
 
 	/// <summary>强化类招式：放音效和 <see cref="BuffFx"/>。</summary>

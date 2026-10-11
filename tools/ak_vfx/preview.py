@@ -9,11 +9,12 @@
                      {"name": "enemy_bsnake_attack_01_hit", "anchor": "target", "at": 0.5}],
               "times": [0.2, 0.4, 0.6]}]}
 anchor：bone（跟随骨骼序号 bone）、hit（原作 HitPoint）、feet（脚下）、target（左侧假人）、projectile（从 HitPoint 飞向假人，
-flight 秒，到达时在假人处播 hit 指定的特效）。tilt=true 是贴地特效。
+flight 秒，到达时在假人处播 hit 指定的特效）。tilt=true 是贴地特效。bone 锚点另有 loop=true（常驻播放，同游戏里的常驻触手）
+与 retract=[collapse, hold]（拖尾缩回，同黑蛇技能时的常驻触手）。
 其他镜头参数：move（bite/ignite/detonate/scorch/summon/downed/revive/death，按黑蛇真实出招配置回放，代替 anim 与 fx；
 enraged=true 用第二条命的版本）、monster + slot（任一本模组怪物按类名与特效槽回放代码里的真实特效配置，
 anim 仍要写，hitDelay 默认取该怪普通攻击的出手时刻；slot 为 buff、death 或怪物的 PreviewCues 名字时取强化、死亡、倒地等）、trace（骨骼序号列表，逐帧把位置与角度写进日志，用来量动作轨迹）、
-cols（拼图每行几帧）。
+cols（拼图每行几帧）、backdrop（铺在最底下的背景图，绝对路径 png）、blastAt（第几秒触发一次塔露拉战的战场火光，真实着色器与包络）。
 要先用 ROARINGFLARE_DEPLOY=0 tools/build_and_deploy.sh 构建 dist/，并至少跑过一次 tools/offline_selftest.sh（建克隆与离线档）。
 游戏窗口会弹出几秒；不碰真实游戏目录与真实存档（--force-steam=off + 隔离 HOME）。
 """

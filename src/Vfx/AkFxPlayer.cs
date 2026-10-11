@@ -171,6 +171,39 @@ internal sealed class AkFxPlayer
 
 	private FxTune _tune = FxTune.None;
 
+	private float _retractAt = float.NegativeInfinity;
+	private float _retractCollapse;
+	private float _retractHold;
+
+	/// <summary>
+	/// 带状拖尾缩回：<paramref name="collapse"/> 秒内把拖尾粒子的初速与力按 smoothstep 收到 0（新粒子停在发射点，拖尾缩回根部），
+	/// 保持到第 <paramref name="hold"/> 秒，再立即恢复，拖尾从根部按原速重新伸出。
+	/// 照原作黑蛇技能触手阵 skill_0x_start_04_reborn 的动画轨道（trail_0x 的 startSpeed 与 ForceModule.x 在 10 帧内 5 → 0）。
+	/// 恢复不照常驻触手自己的 0.9 秒缓入生长：那段慢速发出的粒子会堆在根部打卷（预览对照过）。
+	/// </summary>
+	public void Retract(float collapse, float hold)
+	{
+		_retractAt = _time;
+		_retractCollapse = collapse;
+		_retractHold = hold;
+	}
+
+	/// <summary>拖尾粒子初速与力的倍率（<see cref="Retract"/>），平时是 1。</summary>
+	private float TrailDrive
+	{
+		get
+		{
+			float t = _time - _retractAt;
+			if (t <= 0f || t >= _retractHold)
+			{
+				return 1f;
+			}
+
+			float x = 1f - Math.Min(1f, t / Math.Max(1e-4f, _retractCollapse));
+			return x * x * (3f - 2f * x);
+		}
+	}
+
 	/// <param name="startAt">从特效自身的第几秒开始（预览里看特效中段用；之前的部分先在后台推进完，不绘制）。</param>
 	public void Start(float startAt = 0f)
 	{
@@ -728,7 +761,11 @@ internal sealed class AkFxPlayer
 			};
 			pt.Life = Math.Max(1e-3f, _s.Life.Eval(norm, (float)r.NextDouble()) * (_s.Mods.Trail is not null ? _p.Tune.TrailLife : 1f));
 			(Vector3 pos, Vector3 dir) = ShapeSample(r);
-			float speed = _s.Speed.Eval(norm, (float)r.NextDouble(), Ov("InitialModule.startSpeed.scalar")) * (_s.Mods.Trail is not null ? _p.Tune.TrailSpeed : 1f);
+			float speed = _s.Speed.Eval(norm, (float)r.NextDouble(), Ov("InitialModule.startSpeed.scalar"));
+			if (_s.Mods.Trail is not null)
+			{
+				speed *= _p.Tune.TrailSpeed * _p.TrailDrive;
+			}
 			Vector3 vel = dir * speed;
 			float size = _s.Size.Eval(norm, (float)r.NextDouble());
 			pt.Size0 = _s.Size3d
@@ -897,6 +934,8 @@ internal sealed class AkFxPlayer
 				bool world = _s.Space == 1;
 				// 手调的拖尾运动尺度（FxTune.TrailSpeed）：初速度（出生时）、力、限速与噪声一起乘，粒子轨迹整体等比缩放、形状不变。
 				float reach = _s.Mods.Trail is not null ? _p.Tune.TrailSpeed : 1f;
+				// Retract 时力随初速一起收到 0。
+				float drive = _s.Mods.Trail is not null ? _p.TrailDrive : 1f;
 				float g = _s.Gravity.Eval(n, pt.R0);
 				if (g != 0f)
 				{
@@ -907,7 +946,7 @@ internal sealed class AkFxPlayer
 				if (mods.Force is { } f)
 				{
 					Vector3 fv = new(f.X.Eval(n, pt.R1, Ov("ForceModule.x.scalar")), f.Y.Eval(n, pt.R2), f.Z.Eval(n, pt.R3));
-					pt.Vel += ToSpace(fv * dt * reach, f.World, world, m);
+					pt.Vel += ToSpace(fv * dt * reach * drive, f.World, world, m);
 				}
 
 				pt.AnimVel = Vector3.Zero;
