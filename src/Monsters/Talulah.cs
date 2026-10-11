@@ -151,18 +151,18 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	protected override FlareFx FxFor(string slot) => Cues(slot, IsEnragedSnake);
 
 	/// <summary>开发预览用（AkFxPreview 的 move 模式）：按真实出招配置回放。返回动画名、OnAttack 时刻与各特效。</summary>
-	internal static (string Anim, float HitDelay, FxCue[] Start, FxCue[] Hit, string? Projectile, int Bone, float Speed, float Arc) PreviewMove(string move, bool enraged)
+	internal static (string Anim, float HitDelay, FxCue[] Start, FxCue[] Hit, string? Projectile, int Bone, float Speed, float Arc, FxTune? Tune) PreviewMove(string move, bool enraged)
 	{
 		switch (move)
 		{
 			case "summon":
-				return ("Skill_1_B", SummonDelay, SummonFx, [], null, -1, 0f, 0f);
+				return ("Skill_1_B", SummonDelay, SummonFx, [], null, -1, 0f, 0f, null);
 			case "downed":
-				return ("Reborn_1_Start", 0f, DownedFx, [], null, -1, 0f, 0f);
+				return ("Reborn_1_Start", 0f, DownedFx, [], null, -1, 0f, 0f, null);
 			case "revive":
-				return ("Reborn_1_End", 0f, RevivedFx, [], null, -1, 0f, 0f);
+				return ("Reborn_1_End", 0f, RevivedFx, [], null, -1, 0f, 0f, null);
 			case "death":
-				return ("Die", 0f, DeathCues, [], null, -1, 0f, 0f);
+				return ("Die", 0f, DeathCues, [], null, -1, 0f, 0f, null);
 		}
 
 		(string slot, string anim, float delay) = move switch
@@ -174,7 +174,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 		};
 
 		FlareFx fx = Cues(slot, enraged);
-		return (anim, delay, fx.Start ?? [], fx.Hit ?? [], fx.Projectile, fx.ProjectileBone, fx.ProjectileSpeed, fx.ProjectileArc);
+		return (anim, delay, fx.Start ?? [], fx.Hit ?? [], fx.Projectile, fx.ProjectileBone, fx.ProjectileSpeed, fx.ProjectileArc, fx.ProjectileTune);
 	}
 
 	private static FlareFx Cues(string slot, bool b)
@@ -187,7 +187,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 					[
 						new("enemy_bsnake_skill_01_start_reborn", FxAnchor.Feet, Delay: IgniteBurstAt), new("enemy_bsnake_skill_01_start_02", FxAnchor.Bone, HandBone, IgniteHandAt, Spin: false),
 						new("enemy_bsnake_skill_01_start_03_reborn", FxAnchor.Bone, HeadBone, Spin: false),
-						new("enemy_bsnake_skill_01_start_04_reborn", FxAnchor.Bone, WingBone, Spin: false, Tune: TentacleTune),
+						new("enemy_bsnake_skill_01_start_04_reborn", FxAnchor.Bone, WingBone, Spin: false, Tune: SkillBurstTune),
 					]
 					:
 					[
@@ -201,7 +201,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 					[
 						new("enemy_bsnake_skill_02_start_02_reborn", FxAnchor.Bone, HandBone, DetonateHandAt, Spin: false),
 						new("enemy_bsnake_skill_02_start_03_reborn", FxAnchor.Bone, HandBone, Spin: false),
-						new("enemy_bsnake_skill_02_start_04_reborn", FxAnchor.Bone, WingBone, Spin: false, Tune: TentacleTune),
+						new("enemy_bsnake_skill_02_start_04_reborn", FxAnchor.Bone, WingBone, Spin: false, Tune: SkillBurstTune),
 					]
 					: [
 						new("enemy_bsnake_skill_02_start_02", FxAnchor.Bone, HandBone, DetonateHandAt, Spin: false),
@@ -223,7 +223,8 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 				Projectile: "enemy_bsnake_skill_03_trail",
 				ProjectileBone: HandBone,
 				ProjectileSpeed: 8f,
-				ProjectileArc: 0.6f),
+				ProjectileArc: 0.6f,
+				ProjectileTune: TrailCoreHidden),
 			_ => b
 				? new(
 					Start:
@@ -279,11 +280,11 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	];
 
 	/// <summary>
-	/// 火雨投射物 reborn_01_trail 里的 core 是一块暗红色菱形（贴图 ayer_07 的菱形区域本身是暗色，原作里也是暗的），
-	/// 躺在原作的地面平面上、垂直于飞行方向，在近乎俯视的原作镜头里被火焰盖住；本模组侧视、火球悬空排成一列，
-	/// 它成了半空中一根竖着的黑梭（用户反馈），隐藏。
+	/// 火雨投射物 reborn_01_trail 与焦土火焰弹 skill_03_trail 里的 core 是一块暗红色菱形（贴图 ayer_07 的菱形区域本身是暗色，原作里也是暗的），
+	/// 躺在原作的地面平面上、垂直于飞行方向，在近乎俯视的原作镜头里被火焰盖住；本模组侧视，它成了半空中一根竖着的黑梭（用户反馈），隐藏。
+	/// 原作特效里只有这两个带 core 节点。
 	/// </summary>
-	private static readonly FxTune RainTrailTune = new(Hide: ["core"]);
+	private static readonly FxTune TrailCoreHidden = new(Hide: ["core"]);
 
 	protected override IEnumerable<string> ExtraEffects =>
 		DownedFx.Concat(RevivedFx).Select(cue => cue.Name)
@@ -299,7 +300,20 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	/// </summary>
 	private static readonly FxCue AuraCue = new("enemy_bsnake_buff_04_start_reborn", FxAnchor.Bone, WingBone, Spin: false, Tune: TentacleTune);
 
+	/// <summary>
+	/// 技能里的触手阵 skill_0x_start_04_reborn：尖冠与 chushou 是常驻触手的副本（chushou 的拖尾预热、循环，从常驻特效的稳定态起播），
+	/// 动画轨道 0.33 秒内把它们的初速与力收到 0，触手缩回尖冠；0.9 秒起 chushou2 从尖冠直线射出一圈黑色尖刺
+	/// （无力场、无噪声，初速 10，只发 0.5 秒）；1.05–1.1 秒爆闪、炸开、扩环。
+	/// 本模组的常驻触手是另一个一直在播的特效，技能版的副本叠在上面成了另一套临时触手（用户反馈），所以只隐藏尖冠与 chushou，
+	/// 由常驻触手自己照同一条轨道缩回（<see cref="RetractAura"/>）；尖刺 chushou2 与爆闪照播。
+	/// 用户试过让常驻触手自己射出成尖刺再飘回，最后定为这一版。
+	/// </summary>
+	private static readonly FxTune SkillBurstTune = TentacleTune with { Hide = ["control", "chushou"] };
+
 	private AkFxPlayer? _aura;
+
+	/// <summary>技能时常驻触手：0.33 秒缩回尖冠（原作 10 帧），保持到技能触手阵播完（2.03 秒），再从尖冠按原速重新伸出。</summary>
+	private void RetractAura() => _aura?.Retract(1f / 3f, 2.03f);
 
 	private void EnsureAura()
 	{
@@ -453,6 +467,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	private async Task IgniteMove(IReadOnlyList<Creature> targets)
 	{
 		EnsureAura();
+		RetractAura();
 		FlareSound sound = SoundFor(IgniteSound);
 		FlareFx fx = FxFor(IgniteSound);
 		FlareSfx.Play(sound.Start);
@@ -490,6 +505,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 	private async Task DetonateMove(IReadOnlyList<Creature> targets)
 	{
 		EnsureAura();
+		RetractAura();
 		await Cued(DamageCmd.Attack(DetonateDamage)
 			.FromMonster(this)
 			.WithAttackerAnim(DetonateTrigger, DetonateHitDelay)
@@ -605,7 +621,7 @@ public sealed class Talulah : FlareMonster, IFlareRebirth
 			}
 
 			f.Node.CreateTween().TweenProperty(f.Node, "global_position", f.End, seconds).SetTrans(Godot.Tween.TransitionType.Quad).SetEase(Godot.Tween.EaseType.Out);
-			AkFx.Projectile("enemy_bsnake_reborn_01_trail", f.Container, f.Start + f.Center, f.End + f.Center, unit, seconds, easeOut: true, tune: RainTrailTune);
+			AkFx.Projectile("enemy_bsnake_reborn_01_trail", f.Container, f.Start + f.Center, f.End + f.Center, unit, seconds, easeOut: true, tune: TrailCoreHidden);
 		}
 
 		return seconds;

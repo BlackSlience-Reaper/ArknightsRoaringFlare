@@ -32,6 +32,10 @@ internal static class AkFxPreview
 		public bool Flip { get; set; }
 		/// <summary>手调参数（同 FxTune 的字段名，小写开头）。</summary>
 		public FxTune? Tune { get; set; }
+		/// <summary>拖尾缩回（AkFxPlayer.Retract 的 collapse, hold），开播即触发，只对 bone 锚点生效。</summary>
+		public float[]? Retract { get; set; }
+		/// <summary>常驻播放（同 AkFx.Attach：不按 3 秒收尾），只对 bone 锚点生效。</summary>
+		public bool Loop { get; set; }
 	}
 
 	private sealed class Shot
@@ -55,6 +59,10 @@ internal static class AkFxPreview
 		public string? Monster { get; set; }
 		public string Slot { get; set; } = "";
 		public float? HitDelay { get; set; }
+		/// <summary>铺在最底下的背景图（绝对路径的 png，按视口拉伸），看环境效果用。</summary>
+		public string? Backdrop { get; set; }
+		/// <summary>第几秒触发一次战场火光（BattlefieldBlast 的真实着色器与包络，盖在背景、人物与特效之上）。</summary>
+		public float? BlastAt { get; set; }
 	}
 
 	/// <summary>把黑蛇一个招式的真实配置展开成预览的动画与特效列表（时刻同游戏：出手特效按各自延迟，命中在 OnAttack）。</summary>
@@ -75,7 +83,7 @@ internal static class AkFxPreview
 		shot.Anim = m.Anim;
 		shot.Graphic = 0.28f;
 		shot.Hit = [0f, 1.6f];
-		Append(shot, m.Start, m.Hit, m.Projectile, m.Bone, m.Speed, m.Arc, m.HitDelay);
+		Append(shot, m.Start, m.Hit, m.Projectile, m.Bone, m.Speed, m.Arc, m.Tune, m.HitDelay);
 	}
 
 	private static void ExpandMonster(Shot shot, string monsterName)
@@ -91,10 +99,10 @@ internal static class AkFxPreview
 		shot.Scene = monster.SceneName;
 		shot.Graphic = m.Graphic;
 		shot.Hit = [m.HitPoint.X, m.HitPoint.Y];
-		Append(shot, m.Start, m.Hit, m.Projectile, m.Bone, m.Speed, m.Arc, shot.HitDelay ?? m.AttackDelay);
+		Append(shot, m.Start, m.Hit, m.Projectile, m.Bone, m.Speed, m.Arc, m.Tune, shot.HitDelay ?? m.AttackDelay);
 	}
 
-	private static void Append(Shot shot, FxCue[] start, FxCue[] hit, string? projectileName, int bone, float speed, float arc, float hitDelay)
+	private static void Append(Shot shot, FxCue[] start, FxCue[] hit, string? projectileName, int bone, float speed, float arc, FxTune? tune, float hitDelay)
 	{
 		var m = (Start: start, Hit: hit, Projectile: projectileName, Bone: bone, Speed: speed, Arc: arc, HitDelay: hitDelay);
 		List<FxShot> list = [.. m.Start.Select(c => new FxShot
@@ -104,7 +112,7 @@ internal static class AkFxPreview
 		})];
 		if (m.Projectile is { } projectile)
 		{
-			list.Add(new FxShot { Name = projectile, Anchor = "projectile", Bone = m.Bone, At = m.HitDelay, Speed = m.Speed, Arc = m.Arc, Hit = m.Hit.FirstOrDefault().Name });
+			list.Add(new FxShot { Name = projectile, Anchor = "projectile", Bone = m.Bone, At = m.HitDelay, Speed = m.Speed, Arc = m.Arc, Hit = m.Hit.FirstOrDefault().Name, Tune = tune });
 		}
 		else
 		{
@@ -182,6 +190,8 @@ internal static class AkFxPreview
 		List<Task> saves = [];
 		int frames = 0;
 		double worst = 0;
+		TextureRect? backdrop = null;
+		ColorRect? glow = null;
 
 		void NextShot()
 		{
@@ -192,6 +202,10 @@ internal static class AkFxPreview
 				child.QueueFree();
 			}
 			target?.QueueFree();
+			backdrop?.QueueFree();
+			glow?.QueueFree();
+			backdrop = null;
+			glow = null;
 			shotIndex++;
 			if (shotIndex >= config.Shots.Length)
 			{
@@ -204,6 +218,27 @@ internal static class AkFxPreview
 
 			Shot shot = config.Shots[shotIndex];
 			ExpandMove(shot);
+			Vector2 view = tree.Root.GetVisibleRect().Size;
+			if (shot.Backdrop is { } path && Image.LoadFromFile(path) is { } picture)
+			{
+				backdrop = new TextureRect
+				{
+					Texture = ImageTexture.CreateFromImage(picture),
+					ExpandMode = TextureRect.ExpandModeEnum.IgnoreSize,
+					StretchMode = TextureRect.StretchModeEnum.Scale,
+					Size = view,
+					MouseFilter = Control.MouseFilterEnum.Ignore,
+				};
+				layer.AddChild(backdrop);
+				layer.MoveChild(backdrop, bg.GetIndex() + 1);
+			}
+
+			if (shot.BlastAt is not null)
+			{
+				glow = BattlefieldBlast.CreateGlowLayer();
+				glow.Size = view;
+				layer.AddChild(glow);
+			}
 			actor = Instantiate(shot.Scene, stage, new Vector2(shot.Pos[0], shot.Pos[1]));
 			target = new Node2D { Position = new Vector2(shot.Target[0], shot.Target[1]) };
 			stage.AddChild(target);
@@ -236,6 +271,11 @@ internal static class AkFxPreview
 				}
 
 				Shot shot = config.Shots[shotIndex];
+				if (glow is not null && shot.BlastAt is { } blastAt)
+				{
+					BattlefieldBlast.SetGlow(glow, BattlefieldBlast.Envelope(t - blastAt));
+				}
+
 				foreach ((int bone, Func<Transform2D?> follow) in tracers)
 				{
 					if (follow() is { } tr)
@@ -312,8 +352,13 @@ internal static class AkFxPreview
 					? () => bone() is { } b ? b with { Origin = b.Origin + shift } : null
 					: () => bone() is { } b ? new Transform2D(new Vector2(fx.Flip ? 1f : -1f, 0f), new Vector2(0f, -1f), b.Origin + shift) : null;
 				Vector2 at = follow() is { } tr ? tr.Origin : hitGlobal;
-				AkFx.Play(fx.Name, stage, at, unit, true, follow, tilt: fx.Tilt, speed: fx.Rate, startAt: fx.StartAt, backContainer: _back,
+				AkFxPlayer? player = AkFx.Play(fx.Name, stage, at, unit, true, follow, fx.Loop ? float.PositiveInfinity : 3f, tilt: fx.Tilt, speed: fx.Rate, startAt: fx.StartAt, backContainer: _back,
 					tune: tune);
+				if (fx.Retract is [var collapse, var hold])
+				{
+					player?.Retract(collapse, hold);
+				}
+
 				break;
 			}
 			case "feet":

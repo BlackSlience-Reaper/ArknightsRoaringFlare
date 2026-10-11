@@ -489,7 +489,8 @@ internal static class AkFx
 	/// 从出手者射向目标的投射物：按原作速度（世界单位/秒）算飞行时间，到达时在目标身上播 <paramref name="hits"/>。
 	/// 返回飞行秒数（招式按它等到投射物落地再结算伤害，与原作“命中时结算”一致）；播不了时返回 0。
 	/// </summary>
-	public static float ProjectileTo(Creature attacker, AkFxRig rig, Creature target, string projectile, int bone, float speed, float arc, FxCue[]? hits)
+	public static float ProjectileTo(Creature attacker, AkFxRig rig, Creature target, string projectile, int bone, float speed, float arc, FxCue[]? hits,
+		FxTune? tune = null)
 	{
 		if (TestMode.IsOn || attacker.GetCreatureNode() is not { } from || target.GetCreatureNode() is not { } to)
 		{
@@ -506,7 +507,7 @@ internal static class AkFx
 			{
 				OnTarget(target, attacker, rig.GraphicScale, h);
 			}
-		});
+		}, tune: tune);
 		return seconds;
 	}
 
