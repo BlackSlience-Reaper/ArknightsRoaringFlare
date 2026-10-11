@@ -20,3 +20,9 @@ releases/
 .DS_Store
 # 创意工坊上传工作区（元数据与上传缓存，不进公开仓库）
 workshop/
+# Local machine-specific MSBuild paths
+/Directory.Build.props
+/Deploy-Local.ps1
+.idea/
+__pycache__/
+*.pyc

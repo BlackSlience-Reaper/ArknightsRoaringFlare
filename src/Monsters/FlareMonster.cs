@@ -439,7 +439,7 @@ public abstract class FlareMonster : ModMonsterTemplate
 		return PowerCmd.Apply<TPower>(new ThrowingPlayerChoiceContext(), targets, amount, Creature, null);
 	}
 
-	/// <summary>给其他存活盟友格挡（不影响出伤，可以保留；给盟友加伤害的招式一律不做，见设计文档教训 3）。</summary>
+	/// <summary>给其他存活盟友格挡；给盟友加伤害的招式需由最后行动的单位施放，见设计文档教训 3。</summary>
 	protected async Task GiveBlockToOthers(int amount)
 	{
 		foreach (Creature creature in CombatState.GetTeammatesOf(Creature).Where(c => c != Creature && c.IsAlive))

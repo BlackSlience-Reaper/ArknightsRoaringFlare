@@ -1,4 +1,7 @@
 {
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.title": "Trapped",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.description": "Cannot play [gold]Attacks[/gold] this turn.",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.extraCardText": "Cannot be played this turn.",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.title": "Ignited",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.description": "Take [blue]{Amount}[/blue] damage when this card is played.",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_IGNITED.extraCardText": "Take {Amount} damage."
