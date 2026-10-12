@@ -2,16 +2,20 @@ using ArknightsRoaringFlare.Vfx;
 using ArknightsRoaringFlare.Powers;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
+using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Entities.Cards;
 using MegaCrit.Sts2.Core.Entities.Creatures;
+using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models.Cards;
+using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 
 namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
-/// 帝国前锋一族的公共部分：开场带背水（<see cref="LastStandPower"/>，生命第一次降到一半以下时获得力量；
-/// PRTS：“生命值低于 50% 时攻击力 +100%”），远射 → 突刺 → 战意。数值见 docs/设计文档.md。
+/// 帝国前锋一族共用远射、近战的动画与音效；精锐使用弱点破坏，百战精锐使用身经百战与四招循环。
 /// </summary>
 public abstract class VanguardBase : FlareMonster
 {
@@ -67,9 +71,11 @@ public abstract class VanguardBase : FlareMonster
 
 	public override IReadOnlyList<string> RequiredAnimations => ["Idle", AttackAnimation, "Attack_1_Loop", "Die"];
 
-	protected abstract int LastStandStrength { get; }
+	protected abstract Task ApplyStartingPower();
 
 	protected abstract int LongShotDamage { get; }
+
+	protected virtual int LongShotHits => 1;
 
 	protected abstract int ThrustDamage { get; }
 
@@ -78,7 +84,7 @@ public abstract class VanguardBase : FlareMonster
 	public override async Task AfterAddedToRoom()
 	{
 		await base.AfterAddedToRoom();
-		await ApplyPower<LastStandPower>([Creature], LastStandStrength);
+		await ApplyStartingPower();
 	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
@@ -92,8 +98,9 @@ public abstract class VanguardBase : FlareMonster
 		return Machine([shot, thrust, resolve], shot);
 	}
 
-	private Task LongShotMove(IReadOnlyList<Creature> targets) =>
+	protected Task LongShotMove(IReadOnlyList<Creature> targets) =>
 		Cued(DamageCmd.Attack(LongShotDamage).FromMonster(this)
+			.WithHitCount(LongShotHits)
 			.WithAttackerAnim(ShotTrigger, 0.5f)
 			.WithHitFx(BluntVfx), RangedHitSfx)
 			.Execute(null);
@@ -102,9 +109,22 @@ public abstract class VanguardBase : FlareMonster
 		BuildAnimator(controller, "Idle", "Die", (CreatureAnimator.attackTrigger, AttackAnimation), (ShotTrigger, "Attack_1_Loop"));
 }
 
-/// <summary>帝国前锋精锐（PRTS enemy_1113_empace），单独成一场普通战“沉默的屠夫”。战意：攻击 + 自身力量。</summary>
+/// <summary>帝国前锋精锐：远射开场，2→1 循环；弱点破坏插入击晕与突刺后续接常规循环。</summary>
 public sealed class ImperialVanguard : VanguardBase
 {
+	private bool _resumeWithResolve;
+
+	// 与原版怪物状态一致，只随当前战斗实例保留。
+	public bool ResumeWithResolve
+	{
+		get => _resumeWithResolve;
+		set
+		{
+			AssertMutable();
+			_resumeWithResolve = value;
+		}
+	}
+
 	public override string SceneName => "imperial_vanguard";
 
 	protected override int MuzzleBone => 24;
@@ -113,35 +133,77 @@ public sealed class ImperialVanguard : VanguardBase
 
 	protected override int EyeBone => 36;
 
-	public override int MinInitialHp => ToughValue(176, 168);
+	public override int MinInitialHp => ToughValue(136, 133);
 
-	public override int MaxInitialHp => ToughValue(182, 174);
+	public override int MaxInitialHp => ToughValue(140, 137);
 
-	protected override int LastStandStrength => DeadlyValue(5, 4);
+	private int WeaknessBreakVigor => DeadlyValue(15, 10);
 
-	protected override int LongShotDamage => DeadlyValue(11, 10);
+	protected override int LongShotDamage => DeadlyValue(4, 3);
 
-	protected override int ThrustDamage => DeadlyValue(20, 18);
+	protected override int LongShotHits => 3;
 
-	private int ResolveDamage => DeadlyValue(9, 8);
+	protected override int ThrustDamage => DeadlyValue(20, 19);
 
-	private int ResolveStrength => DeadlyValue(4, 3);
+	private int ResolveBlock => DeadlyValue(12, 10);
+
+	private int ResolveStrength => DeadlyValue(2, 1);
+
+	protected override Task ApplyStartingPower() => ApplyPower<WeaknessBreakPower>([Creature], WeaknessBreakVigor);
+
+	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+	{
+		MoveState resolve = CreateResolveMove();
+		MoveState shot = new(LongShotMoveId, LongShotCycleMove, new MultiAttackIntent(LongShotDamage, LongShotHits));
+		MoveState thrust = new(ThrustMoveId, targets => Strike(ThrustDamage, vfx: SlashVfx, sfx: HeavyHitSfx), new SingleAttackIntent(ThrustDamage));
+		ConditionalBranchState resume = new("RESUME_REGULAR_MOVE");
+		resume.AddState(resolve, () => ResumeWithResolve);
+		resume.AddState(shot, () => !ResumeWithResolve);
+		resolve.FollowUpState = shot;
+		shot.FollowUpState = resolve;
+		thrust.FollowUpState = resume;
+		return Machine([resolve, shot, thrust, resume], shot);
+	}
+
+	private Task LongShotCycleMove(IReadOnlyList<Creature> targets)
+	{
+		// 出手时推进常规循环，击晕和突刺不推进；攻击中反伤触发也能续接下一招。
+		ResumeWithResolve = true;
+		return LongShotMove(targets);
+	}
 
 	protected override MoveState CreateResolveMove() =>
-		new(ResolveMoveId, ResolveMove, new SingleAttackIntent(ResolveDamage), new BuffIntent());
+		new(ResolveMoveId, ResolveMove, new DefendIntent(), new BuffIntent());
 
 	private async Task ResolveMove(IReadOnlyList<Creature> targets)
 	{
-		await Strike(ResolveDamage);
-		PlayFx(BuffFx);
+		ResumeWithResolve = false;
+		BuffCue();
+		await GainBlock(ResolveBlock);
 		await ApplyStrengthToSelf(ResolveStrength);
 	}
 }
 
-/// <summary>帝国前锋百战精锐（PRTS enemy_1113_empace_2），前锋精锐的强化版，精英战“百战精锐”。战意：自身力量 + 格挡。</summary>
+/// <summary>帝国前锋百战精锐：单体强敌，突刺→远射→战意→弹反；未格挡伤害延迟至自身回合结束。</summary>
 public sealed class VanguardVeteran : VanguardBase
 {
-	private const int ResolveBlock = 12;
+	public const string ParryMoveId = "PARRY_MOVE";
+	private const int ThrustDazedPerPile = 2;
+	private const int ResolveEnrage = 1;
+	private const int ResolveVulnerable = 3;
+	private const int ParryBlock = 15;
+	private int _temporaryEnrage;
+
+	// 与原版怪物状态一致，只随当前战斗实例保留。
+	public int TemporaryEnrage
+	{
+		get => _temporaryEnrage;
+		set
+		{
+			AssertMutable();
+			_temporaryEnrage = value;
+		}
+	}
 
 	public override string SceneName => "vanguard_veteran";
 
@@ -151,25 +213,70 @@ public sealed class VanguardVeteran : VanguardBase
 
 	protected override int EyeBone => 8;
 
-	public override int MinInitialHp => ToughValue(206, 196);
+	public override int MinInitialHp => ToughValue(199, 196);
 
-	public override int MaxInitialHp => ToughValue(212, 202);
+	public override int MaxInitialHp => ToughValue(203, 200);
 
-	protected override int LastStandStrength => DeadlyValue(7, 6);
+	protected override Task ApplyStartingPower() => ApplyPower<BattleHardenedPower>([Creature], 1);
 
-	protected override int LongShotDamage => DeadlyValue(11, 10);
+	protected override int LongShotDamage => DeadlyValue(10, 9);
 
-	protected override int ThrustDamage => DeadlyValue(19, 17);
+	protected override int LongShotHits => 2;
 
-	private int ResolveStrength => DeadlyValue(4, 3);
+	protected override int ThrustDamage => DeadlyValue(18, 16);
+
+	private int ParryDamage => DeadlyValue(15, 14);
+
+	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
+	{
+		MoveState thrust = new(ThrustMoveId, ThrustMove, new SingleAttackIntent(ThrustDamage), new StatusIntent(ThrustDazedPerPile * 2));
+		MoveState shot = new(LongShotMoveId, LongShotMove, new MultiAttackIntent(LongShotDamage, LongShotHits));
+		MoveState resolve = CreateResolveMove();
+		MoveState parry = new(ParryMoveId, ParryMove, new SingleAttackIntent(ParryDamage), new DefendIntent());
+		thrust.FollowUpState = shot;
+		shot.FollowUpState = resolve;
+		resolve.FollowUpState = parry;
+		parry.FollowUpState = thrust;
+		return Machine([thrust, shot, resolve, parry], thrust);
+	}
 
 	protected override MoveState CreateResolveMove() =>
-		new(ResolveMoveId, ResolveMove, new BuffIntent(), new DefendIntent());
+		new(ResolveMoveId, ResolveMove, new BuffIntent(), new DebuffIntent());
+
+	private async Task ThrustMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(ThrustDamage, vfx: SlashVfx, sfx: HeavyHitSfx);
+		await CardPileCmd.AddToCombatAndPreview<Dazed>(targets, PileType.Draw, ThrustDazedPerPile, null);
+		await AddStatusCards<Dazed>(targets, ThrustDazedPerPile);
+	}
 
 	private async Task ResolveMove(IReadOnlyList<Creature> targets)
 	{
 		BuffCue();
-		await ApplyStrengthToSelf(ResolveStrength);
-		await GainBlock(ResolveBlock);
+		await ApplyPower<EnragePower>([Creature], ResolveEnrage);
+		TemporaryEnrage += ResolveEnrage;
+		await ApplyPower<VulnerablePower>(targets, ResolveVulnerable);
+	}
+
+	private async Task ParryMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(ParryDamage, vfx: SlashVfx, sfx: HeavyHitSfx);
+		await GainBlock(ParryBlock);
+	}
+
+	public override async Task AfterSideTurnEnd(PlayerChoiceContext choiceContext, CombatSide side, IEnumerable<Creature> participants)
+	{
+		await base.AfterSideTurnEnd(choiceContext, side, participants);
+		if (side != CombatSide.Player || TemporaryEnrage <= 0)
+		{
+			return;
+		}
+
+		int amount = TemporaryEnrage;
+		TemporaryEnrage = 0;
+		if (Creature.GetPower<EnragePower>() is { } enrage)
+		{
+			await PowerCmd.ModifyAmount(choiceContext, enrage, -Math.Min(amount, enrage.Amount), Creature, null);
+		}
 	}
 }

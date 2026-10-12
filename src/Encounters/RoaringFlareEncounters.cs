@@ -9,7 +9,7 @@ using STS2RitsuLib.Scaffolding.Content;
 
 namespace ArknightsRoaringFlare.Encounters;
 
-// 怒号光明的战斗池，规模照原版荣耀：弱 3、普通 9、精英 3，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
+// 怒号光明的战斗池：弱 4、普通 9、精英 2，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
 // 组成、总血量与对照原版的难度见 docs/设计文档.md。起手偏移（SetOpenings）与 docs/tools/opening_sim.py 的 OPENINGS 同步；
 // 先遣与精锐巡逻队的普通纠察官共用完整循环，高级纠察官前三回合打盹；裂兽固定以 1/2/3 起手，族母固定召集开场。
 // 同一场里的同种怪起手一律错开（模拟器硬约束，自检核对）。站位从左到右就是出手顺序，给自己叠力量的头目站最右。
@@ -151,14 +151,14 @@ public sealed class GuidedArtilleryNormal : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 0);
 }
 
-/// <summary>R8-10 沉默的屠夫：帝国前锋精锐单体（先战意）。</summary>
+/// <summary>R8-10 沉默的屠夫：帝国前锋精锐单体，弱敌遭遇（先远射，2→1 循环）；沿用旧模型 ID。</summary>
 public sealed class SilentButcherNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
 
-	protected override IReadOnlyList<MonsterModel> Lineup => [M<ImperialVanguard>()];
+	public override bool IsWeak => true;
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<ImperialVanguard>()];
 }
 
 /// <summary>M8-7 恶言，报应不爽：宿主重装士兵（先重压）+ 萨卡兹宿主百夫长（先吟唱，站最右）。</summary>
@@ -193,14 +193,12 @@ public sealed class EmperorsBladeElite : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
 }
 
-/// <summary>R8-11 落雪，浸黑国土：高级纠察官（前三回合打盹）+ 帝国前锋百战精锐。</summary>
+/// <summary>百战精锐：帝国前锋百战精锐单体强敌，突刺开场；沿用旧模型 ID。</summary>
 public sealed class VanguardVeteranElite : FlareEncounter
 {
-	public override RoomType RoomType => RoomType.Elite;
+	public override RoomType RoomType => RoomType.Monster;
 
-	protected override IReadOnlyList<MonsterModel> Lineup => [M<SeniorPatrolOfficer>(), M<VanguardVeteran>()];
-
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 0);
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<VanguardVeteran>()];
 }
 
 /// <summary>R8-8 人心，向背无常：着铠术师（先法术连击）+ 帝国炮火中枢先兆者（先标定）。</summary>

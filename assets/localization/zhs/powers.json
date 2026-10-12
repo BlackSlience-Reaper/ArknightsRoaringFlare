@@ -41,10 +41,16 @@
   "ARKNIGHTS_ROARING_FLARE_POWER_LAST_STAND_POWER.title": "背水",
   "ARKNIGHTS_ROARING_FLARE_POWER_LAST_STAND_POWER.description": "生命第一次降到一半以下时，获得[gold]力量[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_POWER_LAST_STAND_POWER.smartDescription": "生命第一次降到一半以下时，获得[blue]{Amount}[/blue]点[gold]力量[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_WEAKNESS_BREAK_POWER.title": "弱点破坏",
+  "ARKNIGHTS_ROARING_FLARE_POWER_WEAKNESS_BREAK_POWER.description": "每当[gold]帝国前锋精锐[/gold]的生命值第一次降低到最大生命值的[blue]2/3[/blue]及以下时，被[gold]击晕[/gold]并获得[blue]{Amount}[/blue]点[gold]活力[/gold]。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_WEAKNESS_BREAK_POWER.smartDescription": "每当[gold]{OwnerName}[/gold]的生命值第一次降低到[blue]{Threshold}[/blue]及以下时，被[gold]击晕[/gold]并获得[blue]{Amount}[/blue]点[gold]活力[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_POWER_PERMANENT_REGEN_POWER.title": "永续再生",
   "ARKNIGHTS_ROARING_FLARE_POWER_PERMANENT_REGEN_POWER.description": "回合结束时回复[blue]3[/blue]点生命。",
   "ARKNIGHTS_ROARING_FLARE_POWER_PERMANENT_REGEN_POWER.smartDescription": "[gold]{OwnerName}[/gold]在回合结束时回复[blue]{Amount}[/blue]点生命。",
   "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.title": "汲取",
   "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.description": "[gold]汲取[/gold]造成的未被格挡伤害，按[blue]150%[/blue]治疗自己。",
-  "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.smartDescription": "[gold]汲取[/gold]造成的未被格挡伤害，按[blue]{Amount}%[/blue]治疗自己。"
+  "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.smartDescription": "[gold]汲取[/gold]造成的未被格挡伤害，按[blue]{Amount}%[/blue]治疗自己。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_BATTLE_HARDENED_POWER.title": "身经百战",
+  "ARKNIGHTS_ROARING_FLARE_POWER_BATTLE_HARDENED_POWER.description": "每回合受到的所有未被格挡伤害都延迟至自身回合结束时结算。",
+  "ARKNIGHTS_ROARING_FLARE_POWER_BATTLE_HARDENED_POWER.smartDescription": "[gold]{OwnerName}[/gold]受到的所有未被格挡伤害都延迟至其回合结束时结算。\n（将要受到[blue]{PendingDamage}[/blue]点伤害。）"
 }

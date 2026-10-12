@@ -144,7 +144,7 @@ internal static class RoaringFlareSelfTest
 			int regular = canonical.AllRegularEncounters.Count();
 			int elite = canonical.AllEliteEncounters.Count();
 			int boss = canonical.AllBossEncounters.Count();
-			Require(weak == 3 && regular == 9 && elite == 3 && boss == 1, $"weak={weak} regular={regular} elite={elite} boss={boss}");
+			Require(weak == 4 && regular == 9 && elite == 2 && boss == 1, $"weak={weak} regular={regular} elite={elite} boss={boss}");
 			Require(canonical.AllBossEncounters.Single() is TalulahBoss, canonical.AllBossEncounters.Single().Id.Entry);
 			Require(canonical.BossDiscoveryOrder.SequenceEqual(canonical.AllBossEncounters), "boss discovery order");
 			return $"weak={weak} regular={regular} elite={elite} boss={canonical.AllBossEncounters.Single().Id.Entry}";
