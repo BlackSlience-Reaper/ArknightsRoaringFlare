@@ -24,7 +24,7 @@ public sealed class BattleHardenedPower : ModPowerTemplate
 		set
 		{
 			AssertMutable();
-			_pendingDamage = value;
+			_pendingDamage = Math.Max(0, value);
 			InvokeDisplayAmountChanged();
 		}
 	}
@@ -48,7 +48,8 @@ public sealed class BattleHardenedPower : ModPowerTemplate
 
 		// 暂存这次实际结算应扣的生命；在对应的 After 钩子里提交累计值。
 		// 保持原版每次 LoseHpInternal 向零取整的口径。
-		_damageToDefer = (int)amount;
+		// 生命值本身使用 int；超过其上限的伤害已足以致死，转换前饱和以免抛出异常。
+		_damageToDefer = (int)Math.Min(amount, int.MaxValue);
 		return 0;
 	}
 
@@ -56,7 +57,8 @@ public sealed class BattleHardenedPower : ModPowerTemplate
 	{
 		int damage = _damageToDefer;
 		_damageToDefer = 0;
-		PendingDamage += damage;
+		// 先提升到 long 再相加，避免多次大额攻击使 int 回绕成负数并跳过回合末结算。
+		PendingDamage = (int)Math.Min((long)PendingDamage + damage, int.MaxValue);
 		return Task.CompletedTask;
 	}
 
