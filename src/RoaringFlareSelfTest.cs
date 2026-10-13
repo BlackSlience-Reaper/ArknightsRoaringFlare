@@ -158,7 +158,8 @@ internal static class RoaringFlareSelfTest
 				Require(encounter is FlareEncounter, "not a FlareEncounter");
 				Require(encounter.Title.Exists(), "missing encounters loc title");
 				string kind = encounter.RoomType switch { RoomType.Boss => "boss", RoomType.Elite => "elite", _ => encounter.IsWeak ? "weak" : "normal" };
-				IReadOnlyList<MonsterModel> monsters = ((FlareEncounter)encounter).CreateMonsters(new Rng(1));
+				IReadOnlyList<(MonsterModel Monster, string? Slot)> lineup = ((FlareEncounter)encounter).CreateMonstersWithSlots(new Rng(1));
+				IReadOnlyList<MonsterModel> monsters = lineup.Select(entry => entry.Monster).ToList();
 				List<string> openings = [];
 				foreach (FlareMonster monster in monsters.Cast<FlareMonster>())
 				{
@@ -168,7 +169,8 @@ internal static class RoaringFlareSelfTest
 
 				Require(openings.Count == openings.Distinct().Count(), $"duplicate openings: {string.Join(" + ", openings)}");
 				string tags = string.Join(",", encounter.Tags.Select(t => (int)t));
-				return $"{kind} tags=[{tags}] hp={monsters.Sum(m => m.MinInitialHp)}-{monsters.Sum(m => m.MaxInitialHp)}: {string.Join(" + ", openings)}";
+				string slots = CheckEncounterSlots((FlareEncounter)encounter, lineup);
+				return $"{kind} tags=[{tags}] hp={monsters.Sum(m => m.MinInitialHp)}-{monsters.Sum(m => m.MaxInitialHp)}: {string.Join(" + ", openings)}{slots}";
 			});
 		}
 
@@ -322,24 +324,10 @@ internal static class RoaringFlareSelfTest
 		Check("talulah boss", () =>
 		{
 			EncounterModel boss = ModelDb.Encounter<TalulahBoss>();
-			// 站位靠场景里的同名 Marker2D；火球中途才召唤，要在 AllPossibleMonsters 与预载路径里。
+			// 火球中途才召唤，要在 AllPossibleMonsters 里；场景标记点与预载由逐遭遇检查（CheckEncounterSlots）核对。
 			Require(boss.HasScene && boss.Slots.SequenceEqual(Talulah.FormationSlots) && boss.Slots[^1] == Talulah.BossSlot, "boss slots");
-			Control scene = boss.CreateScene();
-			try
-			{
-				List<string> missing = boss.Slots.Where(slot => scene.GetNodeOrNull<Marker2D>(slot) == null).ToList();
-				Require(missing.Count == 0, $"boss scene lacks {string.Join(", ", missing)}");
-			}
-			finally
-			{
-				scene.Free();
-			}
-
-			foreach (FlareMonster summon in new FlareMonster[] { ModelDb.Monster<Fireball>() })
-			{
-				Require(boss.AllPossibleMonsters.Contains(summon), $"{summon.Id.Entry} missing from AllPossibleMonsters");
-				Require(((TalulahBoss)boss).AssetProfile.ExtraAssetPaths?.Contains(summon.CreatureScenePath) == true, $"{summon.Id.Entry} scene not preloaded");
-			}
+			FlareMonster fireball = ModelDb.Monster<Fireball>();
+			Require(boss.AllPossibleMonsters.Contains(fireball), $"{fireball.Id.Entry} missing from AllPossibleMonsters");
 
 			// 阶段链：开局点燃 → 噬咬 → 焦土 → 引爆 → 噬咬 …；第一次倒下 → 不息恶火 ×3（每回合召唤火球，第三回合重生）→ 噬咬；第二次倒下即死亡。动画名由逐怪物检查按 RequiredAnimations 核对。
 			Talulah talulah = (Talulah)ModelDb.Monster<Talulah>().ToMutable();
@@ -374,6 +362,21 @@ internal static class RoaringFlareSelfTest
 			}
 
 			return $"opening {talulah.OpeningStateId}; node {boss.BossNodePath}";
+		});
+
+		Check("commando captain elite", () =>
+		{
+			EncounterModel elite = ModelDb.Encounter<CommandoCaptainNormal>();
+			// 队长第三回合交接左/中/右三名援军（按 FormationSlots 前三个槽），三者都要在 AllPossibleMonsters 里；
+			// 场景标记点与预载由逐遭遇检查（CheckEncounterSlots）核对。
+			Require(elite.RoomType == RoomType.Elite, $"room {elite.RoomType}");
+			Require(elite.HasScene && elite.Slots.SequenceEqual(CommandoCaptain.FormationSlots) && elite.Slots[^1] == CommandoCaptain.CaptainSlot, "elite slots");
+			foreach (FlareMonster reinforcement in new FlareMonster[] { ModelDb.Monster<UrsusCommando>(), ModelDb.Monster<UrsusArmoredCaster>(), ModelDb.Monster<UrsusCrossbowman>() })
+			{
+				Require(elite.AllPossibleMonsters.Contains(reinforcement), $"{reinforcement.Id.Entry} missing from AllPossibleMonsters");
+			}
+
+			return $"slots=[{string.Join(",", elite.Slots)}]";
 		});
 
 		Check("sound effects", () =>
@@ -530,6 +533,43 @@ internal static class RoaringFlareSelfTest
 		{
 			root.Free();
 		}
+	}
+
+	/// <summary>
+	/// 按场景标记点站位的遭遇战（照原版卵翼虫）：每个槽位都要有同名 Marker2D，开场阵容的槽位都在 Slots 里；
+	/// 中途才召唤的怪物（AllPossibleMonsters 里不在开场阵容的）要列进 AssetProfile.ExtraAssetPaths：原版只预载开场阵容，
+	/// 这份清单由 RitsuLib 在 GetAssetPaths 的后置补丁里追加（原版的 ExtraAssetPaths 属性仍是 null，不能拿来核对）。
+	/// 不用场景的遭遇战不该给槽位。返回附在日志里的摘要。
+	/// </summary>
+	private static string CheckEncounterSlots(FlareEncounter encounter, IReadOnlyList<(MonsterModel Monster, string? Slot)> lineup)
+	{
+		if (!encounter.HasScene)
+		{
+			Require(encounter.Slots.Count == 0 && lineup.All(entry => entry.Slot == null), "slots without an encounter scene");
+			return "";
+		}
+
+		Require(encounter.Slots.Count > 0 && encounter.Slots.Distinct().Count() == encounter.Slots.Count, $"slots [{string.Join(",", encounter.Slots)}]");
+		Require(lineup.All(entry => entry.Slot != null && encounter.Slots.Contains(entry.Slot)),
+			$"lineup slots [{string.Join(",", lineup.Select(entry => entry.Slot))}] not in Slots");
+		Control scene = encounter.CreateScene();
+		try
+		{
+			List<string> missing = encounter.Slots.Where(slot => scene.GetNodeOrNull<Marker2D>(slot) == null).ToList();
+			Require(missing.Count == 0, $"encounter scene lacks {string.Join(", ", missing)}");
+		}
+		finally
+		{
+			scene.Free();
+		}
+
+		List<FlareMonster> summons = encounter.AllPossibleMonsters.Cast<FlareMonster>().Where(monster => lineup.All(entry => entry.Monster.Id != monster.Id)).ToList();
+		foreach (FlareMonster summon in summons)
+		{
+			Require(encounter.AssetProfile.ExtraAssetPaths?.Contains(summon.CreatureScenePath) == true, $"{summon.Id.Entry} scene not preloaded");
+		}
+
+		return $"; slots=[{string.Join(",", encounter.Slots)}] summons=[{string.Join(",", summons.Select(monster => monster.Id.Entry))}]";
 	}
 
 	private static void Check(string name, Func<string> body)
