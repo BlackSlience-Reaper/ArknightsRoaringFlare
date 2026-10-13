@@ -33,7 +33,8 @@ class Move:
     team_str: tuple = (0, 0)  # 全体盟友（含自己）加力量，原版 GetTeammatesOf 含自身。
     self_lead: tuple = (0, 0)  # 给自己叠领袖气质（加给其他盟友的攻击，不加自己）
     vuln: int = 0
-    summon: str | None = None  # 召唤的怪物种类
+    summon: str | tuple[str, ...] | None = None  # 单一种类或按槽位顺序召唤的异种援军
+    escape: bool = False  # 本招完成后退场，召唤物从下一敌方回合行动
     summon_count: int = 1
     summon_vigor: tuple = (0, 0)  # 召唤物下一次攻击的每段伤害加成，攻击结束消耗。
 
@@ -82,6 +83,7 @@ class Mon:
     order: float = 0.0  # 出手顺序键，敌方回合结束时按它重排（模拟原版按槽位排序）
     vigor: int = 0
     temporary_strength: int = 0  # 与永久力量分开；情报力量随贡献者存活而保留
+    escaped: bool = False
     intelligence_contributions: tuple = ()  # (来源站位, 累计情报)，按纠察官分别记账
 
 
@@ -109,7 +111,7 @@ def simulate(kinds: dict, lineup: list[tuple[str, str]], asc: int, turns: int = 
         nxt_worlds: dict = {}
         for (mons, vuln, dmg), p in worlds.items():
             for q, (mons2, (stacks, skip), total) in _turn(kinds, list(mons), vuln, t, asc):
-                mons2 = tuple(sorted(mons2, key=lambda m: m.order))
+                mons2 = tuple(sorted((m for m in mons2 if not m.escaped), key=lambda m: m.order))
                 key = (mons2, (stacks if skip else max(0, stacks - 1), False), dmg + (total,))
                 nxt_worlds[key] = nxt_worlds.get(key, 0.0) + p * q
         worlds = nxt_worlds
@@ -153,22 +155,23 @@ def _turn(kinds, mons, vuln, t, asc):
         summoned = m.summoned
         summon_worlds = [(1.0, mons)]
         if mv.summon:
-            for _ in range(mv.summon_count):
+            summoned_kinds = mv.summon if isinstance(mv.summon, tuple) else (mv.summon,) * mv.summon_count
+            for summoned_kind in summoned_kinds:
                 if summoned >= kind.summon_cap:
                     break
                 summoned += 1
-                sk = kinds[mv.summon]
+                sk = kinds[summoned_kind]
                 next_summon_worlds = []
                 for spawn_prob, spawn_mons in summon_worlds:
-                    first = kind.summon_start(spawn_mons, mv.summon) if kind.summon_start else next(iter(sk.moves))
+                    first = kind.summon_start(spawn_mons, summoned_kind) if kind.summon_start else next(iter(sk.moves))
                     # 排到召唤者前面：夹在前一个怪与召唤者之间，按召唤先后排。
                     order = m.order - 0.5 + summoned * 0.01 if kind.summon_front else max(o.order for o in spawn_mons) + 1
-                    child = Mon(mv.summon, "", start=t + 1, order=order, vigor=mv.summon_vigor[asc])
+                    child = Mon(summoned_kind, "", start=t + 1, order=order, vigor=mv.summon_vigor[asc])
                     for q, state in _branch(kinds, child, tuple(spawn_mons), first):
                         next_summon_worlds.append((spawn_prob * q, [*spawn_mons, replace(child, state=state)]))
                 summon_worlds = next_summon_worlds
         acted = replace(m, history=m.history + (m.state,), strength=strength, summoned=summoned,
-                        lead=m.lead + mv.self_lead[asc], vigor=0 if mv.hits else m.vigor)
+                        lead=m.lead + mv.self_lead[asc], vigor=0 if mv.hits else m.vigor, escaped=mv.escape)
         for spawn_prob, spawn_mons in summon_worlds:
             spawn_mons[i] = acted
             world = tuple(spawn_mons)

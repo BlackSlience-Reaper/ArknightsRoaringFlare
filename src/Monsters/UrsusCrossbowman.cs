@@ -1,3 +1,4 @@
+using ArknightsRoaringFlare.Powers;
 using ArknightsRoaringFlare.Vfx;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
@@ -9,7 +10,7 @@ namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
 /// 乌萨斯突袭弩手（PRTS enemy_1109_uabone），远程弩手。
-/// 招式与数值见 docs/设计文档.md：上弦（自身力量 + 格挡）→ 弩箭 → 速射（三段）。
+/// 招式与数值见 docs/设计文档.md：速射（五段）→ 冲击 → 上弦（自身力量）；存活时为全体敌人提供疗愈。
 /// </summary>
 public sealed class UrsusCrossbowman : FlareMonster
 {
@@ -17,8 +18,9 @@ public sealed class UrsusCrossbowman : FlareMonster
 	public const string BoltMoveId = "BOLT_MOVE";
 	public const string VolleyMoveId = "VOLLEY_MOVE";
 
-	private const int VolleyHits = 3;
-	private const int WindBlock = 6;
+	private const int VolleyHits = 5;
+	private const int HealingAmount = 9;
+	private const int WindStrength = 1;
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.533f;
@@ -45,40 +47,47 @@ public sealed class UrsusCrossbowman : FlareMonster
 	// 原作挂点组件：强化 enemy_uabone_buff 在 SpecialPoint0 即背包骨骼 Bag_PQ（本地 skel 19 号），跟着转。
 	protected override FxCue[]? BuffFx => [new("enemy_uabone_buff", FxAnchor.Bone, 19)];
 
-	public override IReadOnlyList<string> RequiredAnimations => ["Idle", AttackAnimation, "Die"];
+	public override IReadOnlyList<string> RequiredAnimations => ["Idle", AttackAnimation, "Die", "Move_Loop"];
 
-	public override int MinInitialHp => ToughValue(84, 80);
+	public override int MinInitialHp => ToughValue(69, 66);
 
-	public override int MaxInitialHp => ToughValue(88, 84);
+	public override int MaxInitialHp => ToughValue(73, 70);
 
-	private int WindStrength => DeadlyValue(3, 2);
+	private int BoltDamage => DeadlyValue(12, 11);
 
-	private int BoltDamage => DeadlyValue(15, 14);
+	private int VolleyDamage => DeadlyValue(4, 3);
 
-	private int VolleyDamage => DeadlyValue(6, 5);
+	public override async Task AfterAddedToRoom()
+	{
+		await base.AfterAddedToRoom();
+		await ApplyPower<OriginiumHealingPower>([Creature], HealingAmount);
+	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
-		MoveState wind = new(WindMoveId, WindMove, new BuffIntent(), new DefendIntent());
+		MoveState wind = new(WindMoveId, WindMove, new BuffIntent());
 		MoveState bolt = new(BoltMoveId, BoltMove, new SingleAttackIntent(BoltDamage));
 		MoveState volley = new(VolleyMoveId, VolleyMove, new MultiAttackIntent(VolleyDamage, VolleyHits));
-		wind.FollowUpState = bolt;
-		bolt.FollowUpState = volley;
-		volley.FollowUpState = wind;
-		return Machine([wind, bolt, volley], wind);
+		volley.FollowUpState = bolt;
+		bolt.FollowUpState = wind;
+		wind.FollowUpState = volley;
+		return Machine([wind, volley, bolt], volley);
 	}
 
 	private async Task WindMove(IReadOnlyList<Creature> targets)
 	{
 		BuffCue();
 		await ApplyStrengthToSelf(WindStrength);
-		await GainBlock(WindBlock);
 	}
 
 	private Task BoltMove(IReadOnlyList<Creature> targets) => Strike(BoltDamage, vfx: BluntVfx, sfx: RangedHitSfx);
 
 	private Task VolleyMove(IReadOnlyList<Creature> targets) => Strike(VolleyDamage, VolleyHits, BluntVfx, RangedHitSfx);
 
-	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>
-		BuildAnimator(controller, "Idle", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));
+	public override CreatureAnimator GenerateAnimator(MegaSprite controller)
+	{
+		CreatureAnimator animator = BuildAnimator(controller, "Idle", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));
+		animator.AddAnyState(ReinforcementEntrance.RunTrigger, new AnimState("Move_Loop", isLooping: true));
+		return animator;
+	}
 }

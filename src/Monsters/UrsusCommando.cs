@@ -1,4 +1,10 @@
+using ArknightsRoaringFlare.Powers;
 using ArknightsRoaringFlare.Vfx;
+using MegaCrit.Sts2.Core.Combat;
+using MegaCrit.Sts2.Core.Commands;
+using MegaCrit.Sts2.Core.Models;
+using MegaCrit.Sts2.Core.Models.Powers;
+using MegaCrit.Sts2.Core.Nodes.Rooms;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
 using MegaCrit.Sts2.Core.Entities.Creatures;
@@ -9,18 +15,15 @@ namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
 /// 乌萨斯突击者（PRTS enemy_1111_ucommd），重装前排（PRTS：占用 2 个阻挡数）。
-/// 招式与数值见 docs/设计文档.md：冲锋 → 重劈（两段）→ 稳阵（自身力量 + 格挡，其他盟友格挡）。
-/// 给同伴的只有格挡，不影响出伤（设计文档教训 3）。
+/// 重劈 → 稳阵；存活时为其他敌人分担一半未被格挡伤害。
 /// </summary>
 public sealed class UrsusCommando : FlareMonster
 {
-	public const string ChargeMoveId = "CHARGE_MOVE";
 	public const string CleaveMoveId = "CLEAVE_MOVE";
 	public const string HoldLineMoveId = "HOLD_LINE_MOVE";
 
-	private const int CleaveHits = 2;
-	private const int HoldLineBlock = 10;
-	private const int HoldLineAllyBlock = 6;
+	private const int HoldLineBlock = 33;
+	private const int SymbiosisPercent = 50;
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.567f;
@@ -44,56 +47,65 @@ public sealed class UrsusCommando : FlareMonster
 		Hit: [new("enemy_ucommd_attack_01_hit")]);
 
 	// 待机动画在 PRTS 原文件里就拼作 Idile。
-	public override IReadOnlyList<string> RequiredAnimations => ["Idile", AttackAnimation, "Die"];
+	public override IReadOnlyList<string> RequiredAnimations => ["Idile", AttackAnimation, "Die", "Move"];
 
-	public override int MinInitialHp => ToughValue(126, 120);
+	public override int MinInitialHp => ToughValue(94, 91);
+	public override int MaxInitialHp => ToughValue(98, 95);
+	private int CleaveDamage => DeadlyValue(15, 14);
 
-	public override int MaxInitialHp => ToughValue(132, 126);
-
-	private int ChargeDamage => DeadlyValue(20, 18);
-
-	private int CleaveDamage => DeadlyValue(10, 9);
-
-	private int HoldLineStrength => DeadlyValue(3, 2);
+	public override async Task AfterAddedToRoom()
+	{
+		await base.AfterAddedToRoom();
+		await ApplyPower<OriginiumSymbiosisPower>([Creature], SymbiosisPercent);
+	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
-		MoveState charge = new(ChargeMoveId, ChargeMove, new SingleAttackIntent(ChargeDamage));
-		MoveState cleave = new(CleaveMoveId, CleaveMove, new MultiAttackIntent(CleaveDamage, CleaveHits));
-		MoveState hold = new(HoldLineMoveId, HoldLineMove, new BuffIntent(), new DefendIntent());
-		charge.FollowUpState = cleave;
+		MoveState cleave = new(CleaveMoveId, CleaveMove, new SingleAttackIntent(CleaveDamage));
+		MoveState hold = new(HoldLineMoveId, HoldLineMove, new DefendIntent());
 		cleave.FollowUpState = hold;
-		hold.FollowUpState = charge;
-		return Machine([charge, cleave, hold], charge);
+		hold.FollowUpState = cleave;
+		return Machine([cleave, hold], cleave);
 	}
 
-	private Task ChargeMove(IReadOnlyList<Creature> targets) => Strike(ChargeDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
-
-	private Task CleaveMove(IReadOnlyList<Creature> targets) => Strike(CleaveDamage, CleaveHits);
+	private Task CleaveMove(IReadOnlyList<Creature> targets) => Strike(CleaveDamage);
 
 	private async Task HoldLineMove(IReadOnlyList<Creature> targets)
 	{
 		BuffCue();
-		await ApplyStrengthToSelf(HoldLineStrength);
 		await GainBlock(HoldLineBlock);
-		await GiveBlockToOthers(HoldLineAllyBlock);
 	}
 
-	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>
-		BuildAnimator(controller, "Idile", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));
+	public override CreatureAnimator GenerateAnimator(MegaSprite controller)
+	{
+		CreatureAnimator animator = BuildAnimator(controller, "Idile", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));
+		animator.AddAnyState(ReinforcementEntrance.RunTrigger, new AnimState("Move", isLooping: true));
+		return animator;
+	}
 }
 
 /// <summary>
-/// 乌萨斯突击者队长（PRTS enemy_1111_ucommd_2），突击者的强化版，单独成一场普通战。
-/// 招式与数值见 docs/设计文档.md：冲锋 → 重劈（两段）→ 压阵（攻击 + 自身力量）。
+/// 乌萨斯突击者队长：半血开场，第三回合撤退并交接三名援军。
 /// </summary>
 public sealed class CommandoCaptain : FlareMonster
 {
 	public const string ChargeMoveId = "CHARGE_MOVE";
-	public const string CleaveMoveId = "CLEAVE_MOVE";
+	public const string RetreatMoveId = "RETREAT_MOVE";
+	public const string FallenRetreatMoveId = "FALLEN_RETREAT_MOVE";
+	public const string FallenWaitMoveId = "FALLEN_WAIT_MOVE";
 	public const string PressMoveId = "PRESS_MOVE";
 
-	private const int CleaveHits = 2;
+	private const int RetreatTurns = 3;
+	private const int StartingHpPercent = 50;
+	private const int PressDebuff = 99;
+	private const int ReinforcementLowMorale = 2;
+	public const string CaptainSlot = "captain";
+	public static readonly IReadOnlyList<string> FormationSlots = ["commando", "caster", "crossbowman", CaptainSlot];
+	private MoveState _fallenWait = null!;
+	private MoveState _fallenRetreat = null!;
+	private bool _reinforcementsCalled;
+	private bool IsDowned => Creature.GetPower<TacticalRetreatPower>()?.IsDowned == true;
+	private int TurnsRemaining => Creature.GetPower<TacticalRetreatPower>()?.Amount ?? RetreatTurns;
 
 	// 攻击动画 OnAttack 事件的时刻（docs/spine_import.md）。
 	protected override float AttackHitDelay => 0.567f;
@@ -117,41 +129,110 @@ public sealed class CommandoCaptain : FlareMonster
 		Hit: [new("enemy_ucommd_attack_01_hit")]);
 
 	// 待机动画在 PRTS 原文件里就拼作 Idile。
-	public override IReadOnlyList<string> RequiredAnimations => ["Idile", AttackAnimation, "Die"];
+	public override IReadOnlyList<string> RequiredAnimations => ["Idile", AttackAnimation, "Die", "Move"];
 
-	public override int MinInitialHp => ToughValue(198, 190);
+	public override int MinInitialHp => ToughValue(167, 164);
+	public override int MaxInitialHp => ToughValue(171, 168);
+	private int ChargeDamage => DeadlyValue(17, 15);
+	private int RetreatDamage => DeadlyValue(23, 21);
 
-	public override int MaxInitialHp => ToughValue(204, 196);
-
-	private int ChargeDamage => DeadlyValue(24, 22);
-
-	private int CleaveDamage => DeadlyValue(12, 11);
-
-	private int PressDamage => DeadlyValue(11, 10);
-
-	private int PressStrength => DeadlyValue(4, 3);
+	public override async Task AfterAddedToRoom()
+	{
+		await base.AfterAddedToRoom();
+		await ApplyPower<TacticalRetreatPower>([Creature], RetreatTurns);
+		await CreatureCmd.SetCurrentHp(Creature, decimal.Floor(Creature.MaxHp * StartingHpPercent / 100m));
+	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
+		MoveState press = new(PressMoveId, PressMove, new DebuffIntent());
 		MoveState charge = new(ChargeMoveId, ChargeMove, new SingleAttackIntent(ChargeDamage));
-		MoveState cleave = new(CleaveMoveId, CleaveMove, new MultiAttackIntent(CleaveDamage, CleaveHits));
-		MoveState press = new(PressMoveId, PressMove, new SingleAttackIntent(PressDamage), new BuffIntent());
-		charge.FollowUpState = cleave;
-		cleave.FollowUpState = press;
-		press.FollowUpState = charge;
-		return Machine([charge, cleave, press], charge);
+		MoveState retreat = new(RetreatMoveId, RetreatMove, new SingleAttackIntent(RetreatDamage), new EscapeIntent(), new SummonIntent());
+		_fallenWait = new(FallenWaitMoveId, _ => Task.CompletedTask, new UnknownIntent());
+		_fallenRetreat = new(FallenRetreatMoveId, RetreatMove, new EscapeIntent(), new SummonIntent());
+		ConditionalBranchState next = new("CAPTAIN_NEXT");
+		next.AddState(_fallenRetreat, () => IsDowned && TurnsRemaining <= 1);
+		next.AddState(_fallenWait, () => IsDowned);
+		next.AddState(retreat, () => TurnsRemaining <= 1);
+		next.AddState(charge, () => true);
+		foreach (MoveState move in new[] { press, charge, retreat, _fallenWait, _fallenRetreat })
+		{
+			move.FollowUpState = next;
+		}
+		return Build([press, charge, retreat, _fallenWait, _fallenRetreat, next], press);
 	}
 
-	private Task ChargeMove(IReadOnlyList<Creature> targets) => Strike(ChargeDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
+	internal void FallBeforeRetreat()
+	{
+		SetMoveImmediate(TurnsRemaining <= 1 ? _fallenRetreat : _fallenWait, forceTransition: true);
+		NCombatRoom.Instance?.GetCreatureNode(Creature)?.SetAnimationTrigger(CreatureAnimator.deathTrigger);
+	}
 
-	private Task CleaveMove(IReadOnlyList<Creature> targets) => Strike(CleaveDamage, CleaveHits);
+	private async Task ChargeMove(IReadOnlyList<Creature> targets)
+	{
+		if (!IsDowned)
+		{
+			await Strike(ChargeDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
+		}
+	}
 
 	private async Task PressMove(IReadOnlyList<Creature> targets)
 	{
-		await Strike(PressDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
-		await ApplyStrengthToSelf(PressStrength);
+		if (IsDowned)
+		{
+			return;
+		}
+		BuffCue();
+		await ApplyPower<WeakPower>(targets, PressDebuff);
+		await ApplyPower<FrailPower>(targets, PressDebuff);
+		await ApplyPower<VulnerablePower>(targets, PressDebuff);
 	}
 
-	public override CreatureAnimator GenerateAnimator(MegaSprite controller) =>
-		BuildAnimator(controller, "Idile", "Die", (CreatureAnimator.attackTrigger, AttackAnimation));
+	private async Task RetreatMove(IReadOnlyList<Creature> targets)
+	{
+		if (_reinforcementsCalled)
+		{
+			return;
+		}
+		_reinforcementsCalled = true;
+		if (!IsDowned)
+		{
+			await Strike(RetreatDamage, vfx: HeavyBluntVfx, sfx: HeavyHitSfx);
+		}
+		if (CombatManager.Instance.IsOverOrEnding)
+		{
+			return;
+		}
+		// 撤退攻击的反伤也可能击倒队长，在攻击完整结算后读取结果。
+		bool failedRetreat = IsDowned;
+		await ReinforcementEntrance.Exit(Creature, failedRetreat);
+		FlareMonster[] reinforcements =
+		[
+			(FlareMonster)ModelDb.Monster<UrsusCommando>().ToMutable(),
+			(FlareMonster)ModelDb.Monster<UrsusArmoredCaster>().ToMutable(),
+			(FlareMonster)ModelDb.Monster<UrsusCrossbowman>().ToMutable(),
+		];
+		for (int i = 0; i < reinforcements.Length; i++)
+		{
+			reinforcements[i].EnterFromRight = true;
+			Creature ally = await CreatureCmd.Add(reinforcements[i], CombatState, slotName: FormationSlots[i]);
+			if (failedRetreat)
+			{
+				await ApplyPower<LowMoralePower>([ally], ReinforcementLowMorale);
+			}
+		}
+		// 队长的保留能力持续到援军全部加入，期间战斗不会提前结束。
+		await CreatureCmd.Escape(Creature);
+	}
+
+	public override CreatureAnimator GenerateAnimator(MegaSprite controller)
+	{
+		AnimState idle = new("Idile", isLooping: true);
+		CreatureAnimator animator = new(idle, controller);
+		animator.AddAnyState(CreatureAnimator.idleTrigger, idle, () => !IsDowned);
+		animator.AddAnyState(CreatureAnimator.attackTrigger, new AnimState(AttackAnimation) { NextState = idle }, () => !IsDowned);
+		animator.AddAnyState(ReinforcementEntrance.RunTrigger, new AnimState("Move", isLooping: true), () => !IsDowned);
+		animator.AddAnyState(CreatureAnimator.deathTrigger, new AnimState("Die"));
+		return animator;
+	}
 }

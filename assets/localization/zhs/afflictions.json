@@ -1,4 +1,7 @@
 {
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_HEX.title": "咒法",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_HEX.description": "每当你打出这张牌，随机丢弃[blue]{Amount}[/blue]张手牌。",
+  "ARKNIGHTS_ROARING_FLARE_AFFLICTION_HEX.extraCardText": "随机丢弃{Amount}张手牌。",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.title": "被困",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.description": "本回合不能打出[gold]攻击牌[/gold]。",
   "ARKNIGHTS_ROARING_FLARE_AFFLICTION_TRAPPED.extraCardText": "本回合不能被打出。",

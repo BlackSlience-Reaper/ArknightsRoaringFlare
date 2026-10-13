@@ -35,6 +35,18 @@ public abstract class FlareMonster : ModMonsterTemplate
 {
 	public const string SceneRoot = $"res://{ModEntry.ModId}/scenes/creature_visuals/";
 
+	private bool _enterFromRight;
+
+	internal bool EnterFromRight
+	{
+		get => _enterFromRight;
+		set
+		{
+			AssertMutable();
+			_enterFromRight = value;
+		}
+	}
+
 	// 音效槽：招式按槽要音效，各怪物在 SoundFor 里把槽对到明日方舟原作的音效片段（Audio.FlareSfx）。
 	// 原版 FMOD 事件按模型 id 拼路径，模组没有对应事件，所以不走 FMOD。子类可以另加自己的槽名。
 	protected const string MeleeHitSfx = "melee";
@@ -83,6 +95,10 @@ public abstract class FlareMonster : ModMonsterTemplate
 	{
 		await base.AfterAddedToRoom();
 		AkFx.PreloadAll();
+		if (EnterFromRight)
+		{
+			await ReinforcementEntrance.Enter(Creature);
+		}
 	}
 
 	/// <summary>原作敌人预制体的 Graphic 缩放与 HitPoint（决定原作特效在本怪身上的比例与位置）。</summary>
