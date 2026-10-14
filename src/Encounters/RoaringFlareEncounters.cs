@@ -184,14 +184,14 @@ public sealed class CommandoCaptainNormal : FlareEncounter
 
 // ---- 精英 ----
 
-/// <summary>WD-8 大雪将至（「遗尘漫步」）：“皇帝的利刃”，追猎者（先巡猎）。两形态，有专属配乐。</summary>
+/// <summary>WD-8 大雪将至（「遗尘漫步」）：“皇帝的利刃”，追猎者（先巡猎）。两阶段，沿用精英战音乐。</summary>
 public sealed class EmperorsBladeElite : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Elite;
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<EmperorsBladeHunter>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0);
 }
 
 /// <summary>百战精锐：帝国前锋百战精锐单体强敌，突刺开场；沿用旧模型 ID。</summary>

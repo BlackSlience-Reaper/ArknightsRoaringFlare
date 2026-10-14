@@ -73,7 +73,8 @@ MONSTERS = {
                             {'SIPHON': ('汲取', 'Siphon'), 'DEVOUR': ('群噬', 'Devour'), 'CHANT': ('吟唱', 'Chant')}),
     'EmperorsBladeHunter': (('“皇帝的利刃”，追猎者', '"Emperor\'s Blade", Pursuer'),
                             {'PATROL': ('巡猎', 'Hunt'), 'SLASH': ('斩击', 'Slash'), 'DREAD': ('坍缩恐惧', 'Collapsing Dread'),
-                             'REFORM': ('重整', 'Reform'), 'REND': ('近战连斩', 'Rending Blades')}),
+                             'REFORM': ('重整', 'Reform'), 'FORTIFY': ('强化', 'Fortify'), 'REND': ('连斩', 'Rending Blades'),
+                             'SECOND_DREAD': ('坍缩恐惧', 'Collapsing Dread')}),
     'Talulah': (('“不死的黑蛇”', 'Deathless Black Snake'),
                 {'IGNITE': ('点燃', 'Ignite'), 'SNAKE_BITE': ('噬咬', 'Serpent Bite'), 'DETONATE': ('引爆', 'Detonate'),
                  'SCORCH': ('焦土', 'Scorched Earth'), 'UNDYING_FLAME': ('不息恶火', 'Deathless Inferno'),
@@ -187,10 +188,11 @@ POWERS = {
         '每当一只[gold]乌萨斯裂兽[/gold]死亡时，自身获得[blue]{Amount}[/blue]点[gold]力量[/gold]。',
         'Whenever an allied Ursus Ravager dies, gains [blue]{Amount}[/blue] [gold]Strength[/gold].'),
     'FlareRebirthPower': (
-        '重生', 'Rebirth',
-        '被击败时不会立刻退场，之后进入下一阶段。',
+        '重生',
+        'Rebirth',
+        '被击败时不会立刻死亡，之后进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead.',
-        '被击败时不会立刻退场，之后进入下一阶段（还剩[blue]{Amount}[/blue]次）。',
+        '被击败时不会死亡，下回合进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead ([blue]{Amount}[/blue] left).'),
     # 句式照原版适者生存（ADAPTABLE_POWER）与接续（REATTACH_POWER）。
     'BlackSnakeBodyPower': (
@@ -201,10 +203,11 @@ POWERS = {
         'When [gold]{OwnerName}[/gold] would be defeated, it instead vanishes and casts [gold]Deathless Inferno[/gold], reviving even stronger in [blue]3[/blue] turns.'),
     # 隐藏的复活机制（不显示），文案只为防止缺键。
     'TalulahRebirthPower': (
-        '重生', 'Rebirth',
-        '被击败时不会立刻退场，之后进入下一阶段。',
+        '重生',
+        'Rebirth',
+        '被击败时不会死亡，之后进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead.',
-        '被击败时不会立刻退场，之后进入下一阶段。',
+        '被击败时不会死亡，下回合进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead.'),
     'IgnitionPower': (
         '引燃', 'Ignition',
@@ -213,17 +216,26 @@ POWERS = {
         '你打出的牌会被侵蚀为[gold]引燃[/gold]，每打出一次增加[blue]{Amount}[/blue]层。',
         'Cards you play are afflicted with [gold]Ignited[/gold], gaining [blue]{Amount}[/blue] stacks each time they are played.'),
     'DominionPower': (
-        '国度', 'Dominion',
-        '[gold]坍缩恐惧[/gold]每层额外造成[blue]3[/blue]点伤害，并使目标[gold]缠绕[/gold]。',
-        '[gold]Collapsing Dread[/gold] deals [blue]3[/blue] more damage per stack and [gold]Tangles[/gold] its targets.',
-        '[gold]坍缩恐惧[/gold]额外造成[blue]{Amount}[/blue]×3点伤害，并使目标[gold]缠绕[/gold]。',
-        '[gold]Collapsing Dread[/gold] deals [blue]{Amount}[/blue]×3 more damage and [gold]Tangles[/gold] its targets.'),
-    'HunterSovereignPower': (
-        '内卫', 'Imperial Guard',
-        '生命越过阈值时获得1层[gold]国度[/gold]（一形态：50%；二形态：75%、50%、25%）。',
-        'Gains 1 [gold]Dominion[/gold] each time its HP crosses a threshold (first form: 50%; second form: 75%, 50%, 25%).',
-        '生命越过阈值时获得1层[gold]国度[/gold]（一形态：50%；二形态：75%、50%、25%）。',
-        'Gains 1 [gold]Dominion[/gold] each time its HP crosses a threshold (first form: 50%; second form: 75%, 50%, 25%).'),
+        '国度',
+        'Dominion',
+        '每当“皇帝的利刃”，追猎者的生命值第一次降低到50%（第二阶段：75%、50%、25%）及以下时，本回合内使你攻击牌的{Energy:energyIcons()}费用增加[blue]{CostIncrease}[/blue]。',
+        'Whenever the Pursuer first falls to or below 50% HP (second phase: 75%, 50%, 25%), your Attacks cost [blue]{CostIncrease}[/blue] more this turn.',
+        '每当[gold]{OwnerName}[/gold]的生命值第一次降低到[blue]{Threshold1}[/blue]及以下时，本回合内使你攻击牌的{Energy:energyIcons()}费用增加[blue]{CostIncrease}[/blue]。',
+        'Whenever [gold]{OwnerName}[/gold] first falls to or below [blue]{Threshold1}[/blue] HP, your Attacks cost [blue]{CostIncrease}[/blue] more this turn.'),
+    'DominionCostPower': (
+        '压制',
+        'Dominion Suppression',
+        '本回合内，攻击牌的{Energy:energyIcons()}费用增加[blue]{Amount}[/blue]。',
+        'Your Attacks cost [blue]{Amount}[/blue] more this turn.',
+        '本回合内，攻击牌的{Energy:energyIcons()}费用增加[blue]{Amount}[/blue]。',
+        'Your Attacks cost [blue]{Amount}[/blue] more this turn.'),
+    'CollapsingDreadPower': (
+        '坍缩恐惧',
+        'Collapsing Dread',
+        '你每打出1张牌或者结束你的回合时，层数减1。\n层数为0时，将要受到[blue]{Damage}[/blue]点伤害。',
+        'Whenever you play a card or end your turn, reduce this by 1.\nWhen it reaches 0, take [blue]{Damage}[/blue] damage.',
+        '你每打出[blue]1[/blue]张牌或者结束你的回合时，层数减[blue]1[/blue]。\n层数归零时，将要受到[blue]{Damage}[/blue]点伤害。',
+        'Whenever you play a card or end your turn, reduce this by 1.\nWhen it reaches 0, take [blue]{Damage}[/blue] damage.'),
     'ArtilleryMarkPower': (
         '弹着点', 'Artillery Mark',
         '下个敌方回合，炮弹会对你造成伤害；即使先兆者已被击败，炮弹也会落地。',
@@ -324,6 +336,10 @@ for i, lang in enumerate(('zhs', 'eng')):
         powers[f'{key}.title'] = texts[i]
         powers[f'{key}.description'] = texts[2 + i]
         powers[f'{key}.smartDescription'] = texts[4 + i]
+    powers[f'{PREFIX}_POWER_DOMINION_POWER.secondFormDescription'] = (
+        '每当[gold]{OwnerName}[/gold]的生命值第一次降低到[blue]{Threshold1}[/blue]、[blue]{Threshold2}[/blue]、[blue]{Threshold3}[/blue]及以下时，本回合内使你攻击牌的费用增加[blue]{CostIncrease}[/blue]。',
+        'Whenever [gold]{OwnerName}[/gold] first falls to or below [blue]{Threshold1}[/blue], [blue]{Threshold2}[/blue], or [blue]{Threshold3}[/blue] HP, your Attacks cost [blue]{CostIncrease}[/blue] more this turn.'
+    )[i]
     write(lang, 'powers', powers)
 
     afflictions = {}

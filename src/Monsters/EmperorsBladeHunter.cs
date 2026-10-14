@@ -6,9 +6,9 @@ using MegaCrit.Sts2.Core.Audio;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
 using MegaCrit.Sts2.Core.Combat;
 using MegaCrit.Sts2.Core.Commands;
-using MegaCrit.Sts2.Core.Commands.Builders;
 using MegaCrit.Sts2.Core.Entities.Creatures;
 using MegaCrit.Sts2.Core.GameActions.Multiplayer;
+using MegaCrit.Sts2.Core.Models.Cards;
 using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
@@ -17,12 +17,11 @@ namespace ArknightsRoaringFlare.Monsters;
 
 /// <summary>
 /// “皇帝的利刃”，追猎者（PRTS enemy_1520_empgrd），活动「遗尘漫步」WD-8「大雪将至」的 Boss，这里做成精英。两形态：
-/// - 一形态：巡猎（三段）→ 斩击 → 坍缩恐惧。内卫（<see cref="HunterSovereignPower"/>）：生命越过 50% 时叠 1 层国度（<see cref="DominionPower"/>）。
+/// - 一阶段：巡猎 → 斩击 → 坍缩恐惧；国度在生命首次降到半血及以下时提高本回合攻击牌费用。
 /// - 生命归零时靠 <see cref="FlareRebirthPower"/> 倒地，下个敌方回合“重整”：不可选中，满血站起换二形态，同时放一次坍缩恐惧
 ///   （PRTS：第一次被击倒时回满生命并对全场释放【坍缩恐惧】）。
-/// - 二形态：攻击 +50%（力量），改近战：近战连斩（三段）→ 斩击 → 坍缩恐惧；阈值改为 75%、50%、25%。
-/// 坍缩恐惧每层国度多造成 <see cref="DominionPower.DamagePerStack"/> 点伤害；有国度时给目标挂 1 层原版缠绕（攻击牌耗能 +1，一回合），
-/// 对应原作“强制击倒站在【国度】里的干员”。
+/// - 二阶段：连斩（四段）→ 强化 → 坍缩恐惧（2→1→3）；国度阈值改为 75%、50%、25%。
+/// 坍缩恐惧每次施加独立倒计时，出牌或回合结束时减少，归零结算伤害。
 /// 精英战不换曲（照原版精英）。
 /// 动画（PRTS 骨骼）：Idle、Attack01（一形态普攻）、Attack02（二形态近战）、Skill_01（坍缩恐惧）、
 /// Skill_02_Begin / Loop / End（倒地、等待、重整站起）、Die。
@@ -34,20 +33,31 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 	public const string DreadMoveId = "DREAD_MOVE";
 	public const string ReformMoveId = "REFORM_MOVE";
 	public const string RendMoveId = "REND_MOVE";
+	public const string FortifyMoveId = "FORTIFY_MOVE";
+	public const string SecondDreadMoveId = "SECOND_DREAD_MOVE";
 
 	private const string DreadTrigger = "Dread";
 
 	// 原版 CreatureCmd.Heal 复活已死亡的生物时会发这个触发器（苦难摇篮爱国者同样用它接站起动画）。
 	private const string ReformTrigger = "Revive";
 
-	private const int PatrolHits = 3;
-	private const int RendHits = 3;
-	private const int DreadTangled = 1;
-	private const int SovereignAmount = 1;
+	private const int PatrolWounds = 3;
+	private const int SlashHits = 2;
+	private const int SlashFrail = 2;
+	private const int RendHits = 4;
+	private const int DominionAmount = 1;
 	private const int RebirthCount = 1;
+	private const int FirstDreadStacks = 12;
+	private const int SecondDreadInitialStacks = 8;
+	private const int DreadStackReduction = 2;
+	private const int MinimumDreadStacks = 2;
+	private const decimal DreadHealPercent = 0.05m;
+	private const int FortifyBlock = 20;
+	private const int FortifyStrength = 1;
 	private const float ReformSeconds = 1.6f;
 
 	private bool _secondForm;
+	private int _nextDreadStacks = SecondDreadInitialStacks;
 	private MoveState? _reformState;
 
 	public override string SceneName => "emperors_blade_hunter";
@@ -119,9 +129,9 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 	public override IReadOnlyList<string> RequiredAnimations =>
 		["Idle", "Attack01", "Attack02", "Skill_01", "Skill_02_Begin", "Skill_02_Loop", "Skill_02_End", "Die"];
 
-	public override int MinInitialHp => ToughValue(128, 120);
+	public override int MinInitialHp => ToughValue(116, 113);
 
-	public override int MaxInitialHp => ToughValue(132, 124);
+	public override int MaxInitialHp => ToughValue(120, 117);
 
 
 	protected override string AttackAnimation => SecondForm ? "Attack02" : "Attack01";
@@ -152,47 +162,39 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 		}
 	}
 
-	private int SecondFormHp => ToughValue(130, 122);
+	private int MinSecondFormHp => ToughValue(176, 173);
+	private int MaxSecondFormHp => ToughValue(180, 177);
 
-	private int PatrolDamage => DeadlyValue(9, 8);
+	private int PatrolDamage => DeadlyValue(24, 22);
 
-	private int SlashDamage => DeadlyValue(22, 20);
+	private int SlashDamage => DeadlyValue(9, 8);
 
-	private int DreadDamage => DeadlyValue(13, 12);
-
-	private int RendDamage => DeadlyValue(11, 10);
-
-	/// <summary>二形态“攻击 +50%”按力量给。</summary>
-	private int SecondFormStrength => DeadlyValue(5, 4);
-
-	private int DominionStacks => Creature.GetPower<DominionPower>()?.Amount ?? 0;
-
-	private decimal CurrentDreadDamage => DreadDamage + DominionPower.DamagePerStack * DominionStacks;
+	private int RendDamage => DeadlyValue(5, 4);
 
 	public override async Task AfterAddedToRoom()
 	{
 		await base.AfterAddedToRoom();
-		await ApplyPower<HunterSovereignPower>([Creature], SovereignAmount);
+		await ApplyPower<DominionPower>([Creature], DominionAmount);
 		await ApplyPower<FlareRebirthPower>([Creature], RebirthCount);
 	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
-		MoveState slash = new(SlashMoveId, SlashMove, new SingleAttackIntent(SlashDamage));
-		MoveState dread = new(DreadMoveId, DreadMove, new SingleAttackIntent(() => CurrentDreadDamage), new DebuffIntent());
-		MoveState patrol = new(PatrolMoveId, targets => Strike(PatrolDamage, PatrolHits), new MultiAttackIntent(PatrolDamage, PatrolHits));
-		ReformState = new MoveState(ReformMoveId, ReformMove, new HealIntent(), new BuffIntent()) { MustPerformOnceBeforeTransitioning = true };
+		MoveState patrol = new(PatrolMoveId, PatrolMove, new SingleAttackIntent(PatrolDamage), new StatusIntent(PatrolWounds));
+		MoveState slash = new(SlashMoveId, SlashMove, new MultiAttackIntent(SlashDamage, SlashHits), new DebuffIntent());
+		MoveState dread = new(DreadMoveId, FirstDreadMove, new HealIntent(), new DebuffIntent());
+		ReformState = new MoveState(ReformMoveId, ReformMove, new HealIntent(), new BuffIntent(), new DebuffIntent()) { MustPerformOnceBeforeTransitioning = true };
+		MoveState fortify = new(FortifyMoveId, FortifyMove, new DefendIntent(), new BuffIntent());
 		MoveState rend = new(RendMoveId, targets => Strike(RendDamage, RendHits), new MultiAttackIntent(RendDamage, RendHits));
-		MoveState slash2 = new(SlashMoveId + "_2", SlashMove, new SingleAttackIntent(SlashDamage));
-		MoveState dread2 = new(DreadMoveId + "_2", DreadMove, new SingleAttackIntent(() => CurrentDreadDamage), new DebuffIntent());
+		MoveState dread2 = new(SecondDreadMoveId, SecondDreadMove, new DebuffIntent());
 		slash.FollowUpState = dread;
 		dread.FollowUpState = patrol;
 		patrol.FollowUpState = slash;
 		ReformState.FollowUpState = rend;
-		rend.FollowUpState = slash2;
-		slash2.FollowUpState = dread2;
+		rend.FollowUpState = fortify;
+		fortify.FollowUpState = dread2;
 		dread2.FollowUpState = rend;
-		return Machine([slash, dread, patrol, ReformState, rend, slash2, dread2], slash);
+		return Machine([patrol, slash, dread, ReformState, fortify, rend, dread2], patrol);
 	}
 
 	/// <summary>重生能力在一形态倒下时调用：下一招强制为重整。</summary>
@@ -209,33 +211,59 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 		return Task.CompletedTask;
 	}
 
-	private Task SlashMove(IReadOnlyList<Creature> targets) => Strike(SlashDamage, vfx: SlashVfx, sfx: HeavyHitSfx);
-
-	private async Task DreadMove(IReadOnlyList<Creature> targets)
+	private async Task PatrolMove(IReadOnlyList<Creature> targets)
 	{
-		await CollapsingDread(targets, withAnimation: true);
+		await Strike(PatrolDamage);
+		await AddStatusCards<Wound>(targets, PatrolWounds);
 	}
 
-	/// <summary>坍缩恐惧：伤害随国度层数增加；有国度时再给目标挂缠绕。重整时也放一次（不另播动画）。</summary>
-	private async Task CollapsingDread(IReadOnlyList<Creature> targets, bool withAnimation)
+	private async Task SlashMove(IReadOnlyList<Creature> targets)
 	{
-		bool knockdown = DominionStacks > 0;
-		AttackCommand attack = DamageCmd.Attack(CurrentDreadDamage).FromMonster(this);
-		attack = withAnimation ? attack.WithAttackerAnim(DreadTrigger, DreadHitDelay) : attack.WithNoAttackerAnim();
-		await Cued(attack.WithHitFx(ArtsVfx), ArtsHitSfx).Execute(null);
-		if (knockdown)
+		await Strike(SlashDamage, SlashHits, sfx: HeavyHitSfx);
+		await ApplyPower<FrailPower>(targets, SlashFrail);
+	}
+
+	private async Task FirstDreadMove(IReadOnlyList<Creature> targets)
+	{
+		await CreatureCmd.Heal(Creature, Creature.MaxHp * DreadHealPercent);
+		await CollapsingDread(targets, FirstDreadStacks, withAnimation: true);
+	}
+
+	private async Task FortifyMove(IReadOnlyList<Creature> targets)
+	{
+		BuffCue();
+		await GainBlock(FortifyBlock);
+		await ApplyStrengthToSelf(FortifyStrength);
+	}
+
+	private async Task SecondDreadMove(IReadOnlyList<Creature> targets)
+	{
+		await CollapsingDread(targets, _nextDreadStacks, withAnimation: true);
+		_nextDreadStacks = Math.Max(MinimumDreadStacks, _nextDreadStacks - DreadStackReduction);
+	}
+
+	private async Task CollapsingDread(IReadOnlyList<Creature> targets, int stacks, bool withAnimation)
+	{
+		if (withAnimation)
 		{
-			await ApplyPower<TangledPower>(targets, DreadTangled);
+			PlaySound(ArtsHitSfx, DreadHitDelay);
+			PlayFx(FxFor(ArtsHitSfx).Start);
+			await PacedAnim(DreadTrigger, DreadHitDelay);
 		}
+		foreach (Creature target in targets.Where(target => target.IsAlive))
+		{
+			PlayFxOn(target, FxFor(ArtsHitSfx).Hit);
+		}
+		await ApplyPower<CollapsingDreadPower>(targets, stacks);
 	}
 
 	/// <summary>
 	/// 重整：满血换二形态。原版 CreatureCmd.Heal 对已死亡生物会复活（触发 Revive 动画）。
-	/// 一形态倒下时原版移除死后不保留的能力（力量等），重生、内卫、国度声明了保留；最后移除重生能力，二形态倒下即真正死亡。
+	/// 一阶段倒下时保留重生与国度；重整后移除重生能力，二阶段倒下即真正死亡。
 	/// </summary>
 	private async Task ReformMove(IReadOnlyList<Creature> targets)
 	{
-		if (!CombatState.IsLiveCombat() || Creature.GetPower<FlareRebirthPower>() is not { IsReviving: true } rebirth)
+		if (Creature.GetPower<FlareRebirthPower>() is not { IsReviving: true } rebirth)
 		{
 			return;
 		}
@@ -245,21 +273,14 @@ public sealed class EmperorsBladeHunter : FlareMonster, IFlareRebirth
 		FlareSfx.PlaySequence(("e_atk_blackring", 0f), ("e_skill_bigblackring", 0.5f));
 		PlayFx(ReformFx);
 		rebirth.Revive();
-		decimal hp = Creature.ScaleHpForMultiplayer(SecondFormHp, CombatState.Encounter, CombatState.Players.Count, CombatState.RunState.CurrentActIndex);
+		int rolledHp = RunRng.Niche.NextInt(MinSecondFormHp, MaxSecondFormHp + 1);
+		decimal hp = Creature.ScaleHpForMultiplayer(rolledHp, CombatState.Encounter, CombatState.Players.Count, CombatState.RunState.CurrentActIndex);
 		await CreatureCmd.SetMaxHp(Creature, hp);
 		await CreatureCmd.Heal(Creature, hp);
 		await Cmd.Wait(ReformSeconds);
 		await PowerCmd.Remove<FlareRebirthPower>(Creature);
-		// 内卫与国度都声明死后不移除（ShouldPowerBeRemovedAfterOwnerDeath），倒地前叠的国度层数留到二形态。
-		if (Creature.GetPower<HunterSovereignPower>() is not { } sovereign)
-		{
-			await ApplyPower<HunterSovereignPower>([Creature], SovereignAmount);
-			sovereign = Creature.GetPower<HunterSovereignPower>()!;
-		}
-
-		sovereign.EnterSecondForm();
-		await ApplyStrengthToSelf(SecondFormStrength);
-		await CollapsingDread(targets, withAnimation: false);
+		Creature.GetPower<DominionPower>()!.EnterSecondForm();
+		await CollapsingDread(targets, FirstDreadStacks, withAnimation: false);
 	}
 
 	/// <summary>一形态倒下且还没重整时，死亡触发器播倒地而不是 Die。</summary>

@@ -455,16 +455,19 @@ internal static class RoaringFlareSelfTest
 
 		Check("hunter forms", () =>
 		{
-			// 一形态 斩击 → 坍缩恐惧 → 巡猎；重整之后是二形态循环（近战连斩 → 斩击 → 坍缩恐惧）。
+			// 一阶段 巡猎 → 斩击 → 坍缩恐惧；重整之后是二阶段 2→1→3 循环（连斩 → 强化 → 坍缩恐惧）。
 			EmperorsBladeHunter hunter = (EmperorsBladeHunter)ModelDb.Monster<EmperorsBladeHunter>().ToMutable();
 			hunter.SetUpForCombat();
 			IReadOnlyDictionary<string, MonsterState> states = hunter.MoveStateMachine!.States;
 			Require(((MoveState)states[EmperorsBladeHunter.ReformMoveId]).FollowUpState?.Id == EmperorsBladeHunter.RendMoveId, "reform -> rend");
+			Require(((MoveState)states[EmperorsBladeHunter.RendMoveId]).FollowUpState?.Id == EmperorsBladeHunter.FortifyMoveId, "rend -> fortify");
+			Require(((MoveState)states[EmperorsBladeHunter.FortifyMoveId]).FollowUpState?.Id == EmperorsBladeHunter.SecondDreadMoveId, "fortify -> dread");
+			Require(((MoveState)states[EmperorsBladeHunter.SecondDreadMoveId]).FollowUpState?.Id == EmperorsBladeHunter.RendMoveId, "dread -> rend");
 			IReadOnlyList<MonsterModel> elite = ((FlareEncounter)ModelDb.Encounter<EmperorsBladeElite>()).CreateMonsters(new Rng(1));
 			FlareMonster opening = (FlareMonster)elite.Single();
 			opening.SetUpForCombat();
 			Require(opening.OpeningStateId == EmperorsBladeHunter.PatrolMoveId, $"elite opening {opening.OpeningStateId}");
-			return $"opening {opening.OpeningStateId}; REFORM -> {EmperorsBladeHunter.RendMoveId}";
+			return $"opening {opening.OpeningStateId}; REFORM -> REND -> FORTIFY -> SECOND_DREAD -> REND";
 		});
 
 		foreach (Type monster in ModEntry.ModelTypes<FlareMonster>())
