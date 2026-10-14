@@ -5,7 +5,6 @@ using MegaCrit.Sts2.Core.GameActions.Multiplayer;
 using MegaCrit.Sts2.Core.Animation;
 using MegaCrit.Sts2.Core.Bindings.MegaSpine;
 using MegaCrit.Sts2.Core.Entities.Creatures;
-using MegaCrit.Sts2.Core.Models.Powers;
 using MegaCrit.Sts2.Core.MonsterMoves.Intents;
 using MegaCrit.Sts2.Core.MonsterMoves.MonsterMoveStateMachine;
 
@@ -113,59 +112,85 @@ public sealed class UrsusArmoredCaster : ArmoredCasterBase
 	}
 }
 
-/// <summary>高级着铠术师保留原有覆甲与三招循环。</summary>
+/// <summary>源石法术开场一次，随后法术连击 → 仪式准备 → 仪式循环。</summary>
 public sealed class SeniorArmoredCaster : ArmoredCasterBase
 {
 	public const string ArtsBoltMoveId = "ARTS_BOLT_MOVE";
 	public const string ArtsComboMoveId = "ARTS_COMBO_MOVE";
-	public const string ArmorUpMoveId = "ARMOR_UP_MOVE";
+	public const string PrepareMoveId = "PREPARE_MOVE";
+	public const string RitualMoveId = "RITUAL_MOVE";
+	private const int ArmorAmount = 20;
+	private const int FrostAmount = 1;
+	private const int InitialFlameAmount = 2;
+	private const int RitualFlameIncrease = 2;
+	private const int ComboHits = 5;
+	private const int ComboStrength = 1;
+	private int _flameAmount = InitialFlameAmount;
+
 	public override string SceneName => "senior_armored_caster";
-	public override int MinInitialHp => ToughValue(104, 100);
-	public override int MaxInitialHp => ToughValue(108, 104);
-
-	private const int ComboHits = 2;
-	private const int BoltWeak = 1;
-
-	private int PlatingAmount => ToughValue(12, 10);
-
-	private int ArtsBoltDamage => DeadlyValue(17, 16);
-
-	private int ArtsComboDamage => DeadlyValue(10, 9);
-
-	private const int ArmorUpBlock = 14;
-
-	private int ArmorUpStrength => DeadlyValue(3, 2);
+	public override int MinInitialHp => ToughValue(143, 140);
+	public override int MaxInitialHp => ToughValue(147, 144);
+	private int ArtsComboDamage => DeadlyValue(4, 3);
+	private int RitualDamage => DeadlyValue(20, 19);
 
 	public override async Task AfterAddedToRoom()
 	{
 		await base.AfterAddedToRoom();
-		await ApplyPower<PlatingPower>([Creature], PlatingAmount);
+		await ApplyPower<OriginiumArmorPower>([Creature], ArmorAmount);
 	}
 
 	protected override MonsterMoveStateMachine GenerateMoveStateMachine()
 	{
-		MoveState bolt = new(ArtsBoltMoveId, ArtsBoltMove, new SingleAttackIntent(ArtsBoltDamage), new DebuffIntent());
-		MoveState combo = new(ArtsComboMoveId, ArtsComboMove, new MultiAttackIntent(ArtsComboDamage, ComboHits));
-		MoveState armor = new(ArmorUpMoveId, ArmorUpMove, new DefendIntent(), new BuffIntent());
+		MoveState bolt = new(ArtsBoltMoveId, ArtsBoltMove, new CardDebuffIntent(), new DebuffIntent());
+		MoveState combo = new(ArtsComboMoveId, ArtsComboMove, new MultiAttackIntent(ArtsComboDamage, ComboHits), new BuffIntent());
+		MoveState prepare = new(PrepareMoveId, _ => Task.CompletedTask, new UnknownIntent());
+		MoveState ritual = new(RitualMoveId, RitualMove, new SingleAttackIntent(RitualDamage), new CardDebuffIntent(), new DebuffIntent());
 		bolt.FollowUpState = combo;
-		combo.FollowUpState = armor;
-		armor.FollowUpState = bolt;
-		return Machine([bolt, combo, armor], bolt);
+		combo.FollowUpState = prepare;
+		prepare.FollowUpState = ritual;
+		ritual.FollowUpState = combo;
+		return Machine([bolt, combo, prepare, ritual], bolt);
 	}
 
 	private async Task ArtsBoltMove(IReadOnlyList<Creature> targets)
 	{
-		await Strike(ArtsBoltDamage, vfx: ArtsVfx, sfx: ArtsHitSfx);
-		await ApplyPower<WeakPower>(targets, BoltWeak);
-	}
-
-	private Task ArtsComboMove(IReadOnlyList<Creature> targets) => Strike(ArtsComboDamage, ComboHits, ArtsVfx, ArtsHitSfx);
-
-	private async Task ArmorUpMove(IReadOnlyList<Creature> targets)
-	{
 		BuffCue();
-		await GainBlock(ArmorUpBlock);
-		await ApplyStrengthToSelf(ArmorUpStrength);
+		await FreezeSkills(targets);
+		await ApplyPower<OriginiumFlamePower>(targets, _flameAmount);
 	}
 
+	private async Task FreezeSkills(IReadOnlyList<Creature> targets)
+	{
+		foreach (Creature target in targets.Where(c => c.IsAlive))
+		{
+			if (target.GetPower<OriginiumFrostPower>() is { } frost)
+			{
+				await frost.FreezeAllCards(Creature);
+			}
+			else
+			{
+				await PowerCmd.Apply<OriginiumFrostPower>(new ThrowingPlayerChoiceContext(), target, FrostAmount, Creature, null);
+			}
+		}
+	}
+
+	private async Task ArtsComboMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(ArtsComboDamage, ComboHits, ArtsVfx, ArtsHitSfx);
+		if (Creature.IsAlive)
+		{
+			await ApplyStrengthToSelf(ComboStrength);
+		}
+	}
+
+	private async Task RitualMove(IReadOnlyList<Creature> targets)
+	{
+		await Strike(RitualDamage, vfx: ArtsVfx, sfx: ArtsHitSfx);
+		if (Creature.IsAlive)
+		{
+			_flameAmount += RitualFlameIncrease;
+			await FreezeSkills(targets);
+			await ApplyPower<OriginiumFlamePower>(targets, _flameAmount);
+		}
+	}
 }

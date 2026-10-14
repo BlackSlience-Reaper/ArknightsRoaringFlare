@@ -25,7 +25,7 @@ ENCOUNTERS = {
     'HuskVillageSearchNormal': ('纠察巡逻队（精锐）', 'Patrol Squad (Elite)', '{character}没能突破[gold]{encounter}[/gold]的封锁。', '{character} could not break through the [gold]{encounter}[/gold].'),
     'RavagerPackNormal': ('裂兽群', 'Ravager Pack', '{character}被[gold]{encounter}[/gold]撕碎了。', '{character} was torn apart by a [gold]{encounter}[/gold].'),
     'CrossbowmenNormal': ('突袭弩手', 'Raid Crossbowmen', '{character}倒在了[gold]{encounter}[/gold]的弩箭下。', '{character} fell to the bolts of the [gold]{encounter}[/gold].'),
-    'CasterSquadNormal': ('术师小队', 'Caster Squad', '{character}倒在了[gold]{encounter}[/gold]的法术之下。', '{character} fell to the arts of a [gold]{encounter}[/gold].'),
+    'CasterSquadNormal': ('高级术士', 'Senior Caster', '{character}倒在了[gold]{encounter}[/gold]的法术之下。', '{character} fell to the arts of a [gold]{encounter}[/gold].'),
     'CommandoSquadNormal': ('突击者小队', 'Commando Squad', '{character}被[gold]{encounter}[/gold]冲垮了。', '{character} was overrun by a [gold]{encounter}[/gold].'),
     'GuidedArtilleryNormal': ('牵引的炮火', 'Guided Artillery', '{character}没能躲开[gold]{encounter}[/gold]。', '{character} could not escape the [gold]{encounter}[/gold].'),
     'SilentButcherNormal': ('沉默的屠夫', 'The Silent Butcher', '{character}倒在了[gold]{encounter}[/gold]面前。', '{character} fell before [gold]{encounter}[/gold].'),
@@ -54,7 +54,7 @@ MONSTERS = {
     'UrsusArmoredCaster': (('乌萨斯着铠术师', 'Ursus Armored Caster'),
                            {'HEX': ('源石法术：咒法', 'Originium Arts: Hex'), 'FLAME': ('源石法术：火焰', 'Originium Arts: Flame'), 'PREPARE': ('仪式准备', 'Ritual Preparation'), 'RITUAL': ('仪式', 'Ritual')}),
     'SeniorArmoredCaster': (('乌萨斯高级着铠术师', 'Senior Armored Caster'),
-                            {'ARTS_BOLT': ('源石法术', 'Arts Bolt'), 'ARTS_COMBO': ('法术连击', 'Arts Combo'), 'ARMOR_UP': ('铠化', 'Armor Up')}),
+                            {'ARTS_BOLT': ('源石法术', 'Originium Arts'), 'ARTS_COMBO': ('法术连击', 'Arts Combo'), 'PREPARE': ('仪式准备', 'Ritual Preparation'), 'RITUAL': ('仪式', 'Ritual')}),
     'UrsusCommando': (('乌萨斯突击者', 'Ursus Commando'),
                       {'CLEAVE': ('重劈', 'Cleave'), 'HOLD_LINE': ('稳阵', 'Hold the Line')}),
     'CommandoCaptain': (('乌萨斯突击者队长', 'Commando Captain'),
@@ -111,10 +111,10 @@ POWERS = {
     'OriginiumArmorPower': (
         '源石技艺：铠甲',
         'Originium Arts: Armor',
-        '乌萨斯着铠术师存活时，所有敌人在玩家回合开始时获得[blue]{Amount}[/blue]点[gold]格挡[/gold]。',
-        'While the Ursus Armored Caster lives, all enemies gain [blue]{Amount}[/blue] [gold]Block[/gold] at the start of the player turn.',
-        '乌萨斯着铠术师存活时，所有敌人在玩家回合开始时获得[blue]{Amount}[/blue]点[gold]格挡[/gold]。',
-        'While the Ursus Armored Caster lives, all enemies gain [blue]{Amount}[/blue] [gold]Block[/gold] at the start of the player turn.',
+        '施法者存活时，所有敌人在玩家回合开始时获得[blue]{Amount}[/blue]点[gold]格挡[/gold]。',
+        'While the caster lives, all enemies gain [blue]{Amount}[/blue] [gold]Block[/gold] at the start of the player turn.',
+        '[gold]{OwnerName}[/gold]存活时，所有敌人在玩家回合开始时获得[blue]{Amount}[/blue]点[gold]格挡[/gold]。',
+        'While [gold]{OwnerName}[/gold] lives, all enemies gain [blue]{Amount}[/blue] [gold]Block[/gold] at the start of the player turn.',
     ),
     'OriginiumSymbiosisPower': (
         '源石技艺：共生',
@@ -131,6 +131,14 @@ POWERS = {
         'While the Ursus Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [blue]{Amount}[/blue] [gold]Hex[/gold].',
         '乌萨斯着铠术师存活时，你的所有[gold]技能牌[/gold]被[blue]{Amount}[/blue]层[gold]咒法[/gold]侵蚀。',
         'While the Ursus Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [blue]{Amount}[/blue] [gold]Hex[/gold].',
+    ),
+    'OriginiumFrostPower': (
+        '源石技艺：霜冻',
+        'Originium Arts: Frost',
+        '乌萨斯高级着铠术师存活时，你的所有[gold]技能牌[/gold]被[gold]霜冻[/gold]侵蚀。',
+        'While the Senior Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [gold]Frost[/gold].',
+        '乌萨斯高级着铠术师存活时，你的所有[gold]技能牌[/gold]被[gold]霜冻[/gold]侵蚀。',
+        'While the Senior Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [gold]Frost[/gold].',
     ),
     'OriginiumFlamePower': (
         '源石技艺：火焰',
@@ -258,6 +266,12 @@ POWERS = {
 # 卡牌侵蚀，类名: (中文标题, 英文标题, 中文说明, 英文说明, 中文卡面附加文字, 英文卡面附加文字)
 # 措辞照原版流电（GALVANIZED）：“打出这张牌时受到X点伤害。” / 卡面“受到X点伤害。”
 AFFLICTIONS = {
+    'Frost': (
+        '霜冻', 'Frost',
+        '这张牌被霜冻，无法被打出。\n解冻的方法，相信你应该知道……',
+        'This card is frozen and cannot be played.\nYou should know how to thaw it...',
+        '这张牌被霜冻，无法被打出。\n解冻的方法，相信你应该知道……',
+        'This card is frozen and cannot be played.\nYou should know how to thaw it...'),
     'Hex': (
         '咒法', 'Hex',
         '每当你打出这张牌，随机丢弃[blue]{Amount}[/blue]张手牌。',

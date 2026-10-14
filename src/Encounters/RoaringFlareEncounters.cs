@@ -119,16 +119,14 @@ public sealed class CrossbowmenNormal : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 1);
 }
 
-/// <summary>R8-6 战场，蔓延不止：术师小队，着铠术师 + 高级着铠术师（高级先铠化）。</summary>
+/// <summary>高级术士（strong）：高级着铠术师单独出场，源石法术开场；保留原遭遇模型 ID。</summary>
 public sealed class CasterSquadNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
 
 	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Casters];
 
-	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>(), M<SeniorArmoredCaster>()];
-
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2);
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<SeniorArmoredCaster>()];
 }
 
 /// <summary>R8-5 寒冷，来自知觉：突击者小队，突击者（先稳阵）+ 纠察官。</summary>
