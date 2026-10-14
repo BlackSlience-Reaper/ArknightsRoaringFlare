@@ -25,7 +25,7 @@ ENCOUNTERS = {
     'HuskVillageSearchNormal': ('纠察巡逻队（精锐）', 'Patrol Squad (Elite)', '{character}没能突破[gold]{encounter}[/gold]的封锁。', '{character} could not break through the [gold]{encounter}[/gold].'),
     'RavagerPackNormal': ('裂兽群', 'Ravager Pack', '{character}被[gold]{encounter}[/gold]撕碎了。', '{character} was torn apart by a [gold]{encounter}[/gold].'),
     'CrossbowmenNormal': ('突袭弩手', 'Raid Crossbowmen', '{character}倒在了[gold]{encounter}[/gold]的弩箭下。', '{character} fell to the bolts of the [gold]{encounter}[/gold].'),
-    'CasterSquadNormal': ('术师小队', 'Caster Squad', '{character}倒在了[gold]{encounter}[/gold]的法术之下。', '{character} fell to the arts of a [gold]{encounter}[/gold].'),
+    'CasterSquadNormal': ('高级术士', 'Senior Caster', '{character}倒在了[gold]{encounter}[/gold]的法术之下。', '{character} fell to the arts of a [gold]{encounter}[/gold].'),
     'CommandoSquadNormal': ('突击者小队', 'Commando Squad', '{character}被[gold]{encounter}[/gold]冲垮了。', '{character} was overrun by a [gold]{encounter}[/gold].'),
     'GuidedArtilleryNormal': ('牵引的炮火', 'Guided Artillery', '{character}没能躲开[gold]{encounter}[/gold]。', '{character} could not escape the [gold]{encounter}[/gold].'),
     'SilentButcherNormal': ('沉默的屠夫', 'The Silent Butcher', '{character}倒在了[gold]{encounter}[/gold]面前。', '{character} fell before [gold]{encounter}[/gold].'),
@@ -50,15 +50,15 @@ MONSTERS = {
     'RavagerMatriarch': (('乌萨斯裂兽族母', 'Ravager Matriarch'),
                          {'SUMMON': ('召集', 'Rally'), 'HEAL': ('治愈', 'Heal'), 'INSPIRE': ('鼓舞', 'Inspire'), 'INTIMIDATE': ('震慑', 'Intimidate')}),
     'UrsusCrossbowman': (('乌萨斯突袭弩手', 'Ursus Raid Crossbowman'),
-                         {'WIND': ('上弦', 'Wind Up'), 'BOLT': ('弩箭', 'Bolt'), 'VOLLEY': ('速射', 'Volley')}),
+                         {'WIND': ('上弦', 'Wind Up'), 'BOLT': ('冲击', 'Impact'), 'VOLLEY': ('速射', 'Volley')}),
     'UrsusArmoredCaster': (('乌萨斯着铠术师', 'Ursus Armored Caster'),
-                           {'ARTS_BOLT': ('源石法术', 'Arts Bolt'), 'ARTS_COMBO': ('法术连击', 'Arts Combo'), 'ARMOR_UP': ('铠化', 'Armor Up')}),
+                           {'HEX': ('源石法术：咒法', 'Originium Arts: Hex'), 'FLAME': ('源石法术：火焰', 'Originium Arts: Flame'), 'PREPARE': ('仪式准备', 'Ritual Preparation'), 'RITUAL': ('仪式', 'Ritual')}),
     'SeniorArmoredCaster': (('乌萨斯高级着铠术师', 'Senior Armored Caster'),
-                            {'ARTS_BOLT': ('源石法术', 'Arts Bolt'), 'ARTS_COMBO': ('法术连击', 'Arts Combo'), 'ARMOR_UP': ('铠化', 'Armor Up')}),
+                            {'ARTS_BOLT': ('源石法术', 'Originium Arts'), 'ARTS_COMBO': ('法术连击', 'Arts Combo'), 'PREPARE': ('仪式准备', 'Ritual Preparation'), 'RITUAL': ('仪式', 'Ritual')}),
     'UrsusCommando': (('乌萨斯突击者', 'Ursus Commando'),
-                      {'CHARGE': ('冲锋', 'Charge'), 'CLEAVE': ('重劈', 'Cleave'), 'HOLD_LINE': ('稳阵', 'Hold the Line')}),
+                      {'CLEAVE': ('重劈', 'Cleave'), 'HOLD_LINE': ('稳阵', 'Hold the Line')}),
     'CommandoCaptain': (('乌萨斯突击者队长', 'Commando Captain'),
-                        {'CHARGE': ('冲锋', 'Charge'), 'CLEAVE': ('重劈', 'Cleave'), 'PRESS': ('压阵', 'Press On')}),
+                        {'PRESS': ('压阵', 'Press On'), 'CHARGE': ('冲锋', 'Charge'), 'RETREAT': ('撤退', 'Retreat'), 'FALLEN_RETREAT': ('撤退', 'Retreat'), 'FALLEN_WAIT': ('倒地', 'Downed')}),
     'ArtilleryHarbinger': (('帝国炮火先兆者', 'Imperial Artillery Harbinger'),
                            {'MARK': ('标定', 'Mark Target'), 'BOMBARD': ('炮击', 'Bombard'), 'SCATTER': ('霰弹', 'Scattershot')}),
     'CoreHarbinger': (('帝国炮火中枢先兆者', 'Imperial Core Harbinger'),
@@ -73,7 +73,8 @@ MONSTERS = {
                             {'SIPHON': ('汲取', 'Siphon'), 'DEVOUR': ('群噬', 'Devour'), 'CHANT': ('吟唱', 'Chant')}),
     'EmperorsBladeHunter': (('“皇帝的利刃”，追猎者', '"Emperor\'s Blade", Pursuer'),
                             {'PATROL': ('巡猎', 'Hunt'), 'SLASH': ('斩击', 'Slash'), 'DREAD': ('坍缩恐惧', 'Collapsing Dread'),
-                             'REFORM': ('重整', 'Reform'), 'REND': ('近战连斩', 'Rending Blades')}),
+                             'REFORM': ('重整', 'Reform'), 'FORTIFY': ('强化', 'Fortify'), 'REND': ('连斩', 'Rending Blades'),
+                             'SECOND_DREAD': ('坍缩恐惧', 'Collapsing Dread')}),
     'Talulah': (('“不死的黑蛇”', 'Deathless Black Snake'),
                 {'IGNITE': ('点燃', 'Ignite'), 'SNAKE_BITE': ('噬咬', 'Serpent Bite'), 'DETONATE': ('引爆', 'Detonate'),
                  'SCORCH': ('焦土', 'Scorched Earth'), 'UNDYING_FLAME': ('不息恶火', 'Deathless Inferno'),
@@ -84,17 +85,83 @@ MONSTERS = {
 
 # 类名: (中文标题, 英文标题, 中文说明, 英文说明, 中文 smart, 英文 smart)
 POWERS = {
+    'TacticalRetreatPower': (
+        '战术撤退',
+        'Tactical Retreat',
+        '这名敌人将要在[blue]{Amount}[/blue]回合后撤退。\n[red]最好不要让它活着离开……[/red]',
+        'This enemy will retreat in [blue]{Amount}[/blue] turns.\n[red]Better not let it leave alive...[/red]',
+        '这名敌人将要在[blue]{Amount}[/blue]回合后撤退。\n[red]最好不要让它活着离开……[/red]',
+        'This enemy will retreat in [blue]{Amount}[/blue] turns.\n[red]Better not let it leave alive...[/red]',
+    ),
+    'LowMoralePower': (
+        '士气低迷',
+        'Low Morale',
+        '这名敌人永久失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'This enemy permanently loses [blue]{Amount}[/blue] [gold]Strength[/gold].',
+        '这名敌人永久失去[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'This enemy permanently loses [blue]{Amount}[/blue] [gold]Strength[/gold].',
+    ),
+    'OriginiumHealingPower': (
+        '源石技艺：疗愈',
+        'Originium Arts: Healing',
+        '乌萨斯突袭弩手存活时，所有敌人每次造成未被格挡的伤害后，伤害来源恢复[blue]{Amount}[/blue]点生命。',
+        'While the Ursus Raid Crossbowman lives, whenever an enemy deals unblocked damage, that enemy heals [blue]{Amount}[/blue] HP.',
+        '[gold]{OwnerName}[/gold]存活时，所有敌人每次造成未被格挡的伤害后，恢复[blue]{Amount}[/blue]点生命。',
+        'While the Ursus Raid Crossbowman lives, whenever an enemy deals unblocked damage, that enemy heals [blue]{Amount}[/blue] HP.',
+    ),
+    'OriginiumArmorPower': (
+        '源石技艺：铠甲',
+        'Originium Arts: Armor',
+        '施法者存活时，所有敌人在玩家回合开始时获得[blue]{Amount}[/blue]点[gold]格挡[/gold]。',
+        'While the caster lives, all enemies gain [blue]{Amount}[/blue] [gold]Block[/gold] at the start of the player turn.',
+        '[gold]{OwnerName}[/gold]存活时，所有敌人在玩家回合开始时获得[blue]{Amount}[/blue]点[gold]格挡[/gold]。',
+        'While [gold]{OwnerName}[/gold] lives, all enemies gain [blue]{Amount}[/blue] [gold]Block[/gold] at the start of the player turn.',
+    ),
+    'OriginiumSymbiosisPower': (
+        '源石技艺：共生',
+        'Originium Arts: Symbiosis',
+        '乌萨斯突击者存活时，会吸收其他敌人[blue]{Amount}%[/blue]的未被格挡伤害。',
+        'While the Ursus Commando lives, it absorbs [blue]{Amount}%[/blue] of the unblocked damage dealt to other enemies.',
+        '[gold]{OwnerName}[/gold]存活时，会吸收其他敌人[blue]{Amount}%[/blue]的未被格挡伤害。',
+        'While the Ursus Commando lives, it absorbs [blue]{Amount}%[/blue] of the unblocked damage dealt to other enemies.',
+    ),
+    'OriginiumHexPower': (
+        '源石技艺：咒法',
+        'Originium Arts: Hex',
+        '乌萨斯着铠术师存活时，你的所有[gold]技能牌[/gold]被[blue]{Amount}[/blue]层[gold]咒法[/gold]侵蚀。',
+        'While the Ursus Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [blue]{Amount}[/blue] [gold]Hex[/gold].',
+        '乌萨斯着铠术师存活时，你的所有[gold]技能牌[/gold]被[blue]{Amount}[/blue]层[gold]咒法[/gold]侵蚀。',
+        'While the Ursus Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [blue]{Amount}[/blue] [gold]Hex[/gold].',
+    ),
+    'OriginiumFrostPower': (
+        '源石技艺：霜冻',
+        'Originium Arts: Frost',
+        '乌萨斯高级着铠术师存活时，你的所有[gold]技能牌[/gold]被[gold]霜冻[/gold]侵蚀。',
+        'While the Senior Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [gold]Frost[/gold].',
+        '乌萨斯高级着铠术师存活时，你的所有[gold]技能牌[/gold]被[gold]霜冻[/gold]侵蚀。',
+        'While the Senior Armored Caster lives, all your [gold]Skills[/gold] are afflicted with [gold]Frost[/gold].',
+    ),
+    'OriginiumFlamePower': (
+        '源石技艺：火焰',
+        'Originium Arts: Flame',
+        '你在本回合每打出1张[gold]攻击牌[/gold]，就往你的手牌中加入[blue]{Amount}[/blue]张[gold]灼伤[/gold]。',
+        'Whenever you play an [gold]Attack[/gold] this turn, add [blue]{Amount}[/blue] [gold]Burn[/gold] to your hand.',
+        '你在本回合每打出[blue]1[/blue]张[gold]攻击牌[/gold]，就往手牌中加入[blue]{Amount}[/blue]张[gold]灼伤[/gold]。',
+        'Whenever you play an [gold]Attack[/gold] this turn, add [blue]{Amount}[/blue] [gold]Burn[/gold] to your hand.',
+    ),
     'IntelligenceGatheringPower': (
-        '情报获取', 'Intelligence Gathering',
+        '情报获取',
+        'Intelligence Gathering',
         '回合结束时，每有一名己方感染者纠察官存活，获得[gold]情报[/gold]和[gold]力量[/gold]。',
         'At the end of its turn, gains [gold]Intelligence[/gold] and [gold]Strength[/gold] for each living allied Infected Patrol Officer.',
-        '回合结束时，每有一名己方感染者纠察官存活，获得[blue]{Amount}[/blue]层[gold]情报[/gold]和[blue]{Amount}[/blue]点[gold]力量[/gold]。',
-        'At the end of its turn, gains [blue]{Amount}[/blue] [gold]Intelligence[/gold] and [blue]{Amount}[/blue] [gold]Strength[/gold] for each living allied Infected Patrol Officer.'),
+        '回合结束时，每有一名[gold]感染者纠察官[/gold]存活，获得[blue]{Amount}[/blue]层[gold]情报[/gold]和[blue]{Amount}[/blue]点[gold]力量[/gold]。',
+        'At the end of its turn, gains [blue]{Amount}[/blue] [gold]Intelligence[/gold] and [blue]{Amount}[/blue] [gold]Strength[/gold] for each living allied Infected Patrol Officer.',
+    ),
     'IntelligencePower': (
         '情报', 'Intelligence',
-        '获得[gold]力量[/gold]。感染者纠察官死亡时，失去该名纠察官贡献的[gold]情报[/gold]与对应的[gold]力量[/gold]。',
+        '获得[gold]力量[/gold]。感染者纠察官死亡时，失去对应的[gold]力量[/gold]。',
         'Grants [gold]Strength[/gold]. When an Infected Patrol Officer dies, lose the [gold]Intelligence[/gold] it contributed and the corresponding [gold]Strength[/gold].',
-        '获得[blue]{Amount}[/blue]点[gold]力量[/gold]。感染者纠察官死亡时，失去该名纠察官贡献的[gold]情报[/gold]与对应的[gold]力量[/gold]。',
+        '获得[blue]{Amount}[/blue]点[gold]力量[/gold]。感染者纠察官死亡时，失去其贡献的[gold]力量[/gold]。',
         'Grants [blue]{Amount}[/blue] [gold]Strength[/gold]. When an Infected Patrol Officer dies, lose the [gold]Intelligence[/gold] it contributed and the corresponding [gold]Strength[/gold].'),
     'TrappedPower': (
         '被困', 'Trapped',
@@ -121,10 +188,11 @@ POWERS = {
         '每当一只[gold]乌萨斯裂兽[/gold]死亡时，自身获得[blue]{Amount}[/blue]点[gold]力量[/gold]。',
         'Whenever an allied Ursus Ravager dies, gains [blue]{Amount}[/blue] [gold]Strength[/gold].'),
     'FlareRebirthPower': (
-        '重生', 'Rebirth',
-        '被击败时不会立刻退场，之后进入下一阶段。',
+        '重生',
+        'Rebirth',
+        '被击败时不会立刻死亡，之后进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead.',
-        '被击败时不会立刻退场，之后进入下一阶段（还剩[blue]{Amount}[/blue]次）。',
+        '被击败时不会死亡，下回合进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead ([blue]{Amount}[/blue] left).'),
     # 句式照原版适者生存（ADAPTABLE_POWER）与接续（REATTACH_POWER）。
     'BlackSnakeBodyPower': (
@@ -135,10 +203,11 @@ POWERS = {
         'When [gold]{OwnerName}[/gold] would be defeated, it instead vanishes and casts [gold]Deathless Inferno[/gold], reviving even stronger in [blue]3[/blue] turns.'),
     # 隐藏的复活机制（不显示），文案只为防止缺键。
     'TalulahRebirthPower': (
-        '重生', 'Rebirth',
-        '被击败时不会立刻退场，之后进入下一阶段。',
+        '重生',
+        'Rebirth',
+        '被击败时不会死亡，之后进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead.',
-        '被击败时不会立刻退场，之后进入下一阶段。',
+        '被击败时不会死亡，下回合进入下一阶段。',
         'When defeated, does not leave right away; it enters its next phase instead.'),
     'IgnitionPower': (
         '引燃', 'Ignition',
@@ -147,17 +216,26 @@ POWERS = {
         '你打出的牌会被侵蚀为[gold]引燃[/gold]，每打出一次增加[blue]{Amount}[/blue]层。',
         'Cards you play are afflicted with [gold]Ignited[/gold], gaining [blue]{Amount}[/blue] stacks each time they are played.'),
     'DominionPower': (
-        '国度', 'Dominion',
-        '[gold]坍缩恐惧[/gold]每层额外造成[blue]3[/blue]点伤害，并使目标[gold]缠绕[/gold]。',
-        '[gold]Collapsing Dread[/gold] deals [blue]3[/blue] more damage per stack and [gold]Tangles[/gold] its targets.',
-        '[gold]坍缩恐惧[/gold]额外造成[blue]{Amount}[/blue]×3点伤害，并使目标[gold]缠绕[/gold]。',
-        '[gold]Collapsing Dread[/gold] deals [blue]{Amount}[/blue]×3 more damage and [gold]Tangles[/gold] its targets.'),
-    'HunterSovereignPower': (
-        '内卫', 'Imperial Guard',
-        '生命越过阈值时获得1层[gold]国度[/gold]（一形态：50%；二形态：75%、50%、25%）。',
-        'Gains 1 [gold]Dominion[/gold] each time its HP crosses a threshold (first form: 50%; second form: 75%, 50%, 25%).',
-        '生命越过阈值时获得1层[gold]国度[/gold]（一形态：50%；二形态：75%、50%、25%）。',
-        'Gains 1 [gold]Dominion[/gold] each time its HP crosses a threshold (first form: 50%; second form: 75%, 50%, 25%).'),
+        '国度',
+        'Dominion',
+        '每当“皇帝的利刃”，追猎者的生命值第一次降低到50%（第二阶段：75%、50%、25%）及以下时，本回合内使你攻击牌的{Energy:energyIcons()}费用增加[blue]{CostIncrease}[/blue]。',
+        'Whenever the Pursuer first falls to or below 50% HP (second phase: 75%, 50%, 25%), your Attacks cost [blue]{CostIncrease}[/blue] more this turn.',
+        '每当[gold]{OwnerName}[/gold]的生命值第一次降低到[blue]{Threshold1}[/blue]及以下时，本回合内使你攻击牌的{Energy:energyIcons()}费用增加[blue]{CostIncrease}[/blue]。',
+        'Whenever [gold]{OwnerName}[/gold] first falls to or below [blue]{Threshold1}[/blue] HP, your Attacks cost [blue]{CostIncrease}[/blue] more this turn.'),
+    'DominionCostPower': (
+        '压制',
+        'Dominion Suppression',
+        '本回合内，攻击牌的{Energy:energyIcons()}费用增加[blue]{Amount}[/blue]。',
+        'Your Attacks cost [blue]{Amount}[/blue] more this turn.',
+        '本回合内，攻击牌的{Energy:energyIcons()}费用增加[blue]{Amount}[/blue]。',
+        'Your Attacks cost [blue]{Amount}[/blue] more this turn.'),
+    'CollapsingDreadPower': (
+        '坍缩恐惧',
+        'Collapsing Dread',
+        '你每打出1张牌或者结束你的回合时，层数减1。\n层数为0时，将要受到[blue]{Damage}[/blue]点伤害。',
+        'Whenever you play a card or end your turn, reduce this by 1.\nWhen it reaches 0, take [blue]{Damage}[/blue] damage.',
+        '你每打出[blue]1[/blue]张牌或者结束你的回合时，层数减[blue]1[/blue]。\n层数归零时，将要受到[blue]{Damage}[/blue]点伤害。',
+        'Whenever you play a card or end your turn, reduce this by 1.\nWhen it reaches 0, take [blue]{Damage}[/blue] damage.'),
     'ArtilleryMarkPower': (
         '弹着点', 'Artillery Mark',
         '下个敌方回合，炮弹会对你造成伤害；即使先兆者已被击败，炮弹也会落地。',
@@ -168,7 +246,7 @@ POWERS = {
         '身经百战', 'Battle Hardened',
         '每回合受到的所有未被格挡伤害都延迟至自身回合结束时结算。',
         'All unblocked damage it takes is delayed until the end of its turn.',
-        '[gold]{OwnerName}[/gold]受到的所有未被格挡伤害都延迟至自身回合结束时结算。当前累计[blue]{PendingDamage}[/blue]点伤害。',
+        '[gold]{OwnerName}[/gold]受到的所有未被格挡伤害都延迟至其回合结束时结算。\n（将要受到[blue]{PendingDamage}[/blue]点伤害。）',
         'All unblocked damage [gold]{OwnerName}[/gold] takes is delayed until the end of its turn. Currently [blue]{PendingDamage}[/blue] damage is pending.'),
     'LastStandPower': (
         '背水', 'Last Stand',
@@ -200,11 +278,23 @@ POWERS = {
 # 卡牌侵蚀，类名: (中文标题, 英文标题, 中文说明, 英文说明, 中文卡面附加文字, 英文卡面附加文字)
 # 措辞照原版流电（GALVANIZED）：“打出这张牌时受到X点伤害。” / 卡面“受到X点伤害。”
 AFFLICTIONS = {
+    'Frost': (
+        '霜冻', 'Frost',
+        '这张牌被霜冻，无法被打出。\n解冻的方法，相信你应该知道……',
+        'This card is frozen and cannot be played.\nYou should know how to thaw it...',
+        '这张牌被霜冻，无法被打出。\n解冻的方法，相信你应该知道……',
+        'This card is frozen and cannot be played.\nYou should know how to thaw it...'),
+    'Hex': (
+        '咒法', 'Hex',
+        '每当你打出这张牌，随机丢弃[blue]{Amount}[/blue]张手牌。',
+        'Whenever you play this card, discard [blue]{Amount}[/blue] random cards from your hand.',
+        '随机丢弃{Amount}张手牌。',
+        'Discard {Amount} random cards.'),
     'Trapped': (
         '被困', 'Trapped',
         '本回合不能打出[gold]攻击牌[/gold]。',
         'Cannot play [gold]Attacks[/gold] this turn.',
-        '本回合不能打出。',
+        '本回合不能被打出。',
         'Cannot be played this turn.'),
     'Ignited': (
         '引燃', 'Ignited',
@@ -246,6 +336,10 @@ for i, lang in enumerate(('zhs', 'eng')):
         powers[f'{key}.title'] = texts[i]
         powers[f'{key}.description'] = texts[2 + i]
         powers[f'{key}.smartDescription'] = texts[4 + i]
+    powers[f'{PREFIX}_POWER_DOMINION_POWER.secondFormDescription'] = (
+        '每当[gold]{OwnerName}[/gold]的生命值第一次降低到[blue]{Threshold1}[/blue]、[blue]{Threshold2}[/blue]、[blue]{Threshold3}[/blue]及以下时，本回合内使你攻击牌的费用增加[blue]{CostIncrease}[/blue]。',
+        'Whenever [gold]{OwnerName}[/gold] first falls to or below [blue]{Threshold1}[/blue], [blue]{Threshold2}[/blue], or [blue]{Threshold3}[/blue] HP, your Attacks cost [blue]{CostIncrease}[/blue] more this turn.'
+    )[i]
     write(lang, 'powers', powers)
 
     afflictions = {}

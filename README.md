@@ -9,7 +9,8 @@
 
 ## 内容
 
-- 战斗池：弱怪 4、普通 9、精英 2。敌人以乌萨斯军为主，另有萨卡兹宿主百夫长与宿主重装士兵，使用 PRTS 的原版 Spine 动画。
+- 战斗池：弱怪 4、普通 8、精英 3。敌人以乌萨斯军为主，另有萨卡兹宿主百夫长与宿主重装士兵，使用 PRTS 的原版 Spine 动画。
+- 精英“突击者队长”：半血开场，第三回合撤退并召唤三名援军从右侧跑入；提前击倒队长使三名援军各获得士气低迷2，永久失去2力量。
 - 精英“皇帝的利刃”，追猎者：取自活动「遗尘漫步」WD-8，两形态，国度与坍缩恐惧。
 - Boss “不死的黑蛇”：引燃、噬咬、焦土、引爆；第一次倒下后三回合不息恶火召唤火球，重生后召唤能量聚合体；
   配乐《交锋》《塔露拉·雅特利亚斯》（塞壬唱片）。
@@ -30,6 +31,7 @@ tools/build_and_deploy.sh
 - 离线自检：`tools/offline_selftest.sh [--with-actlikeit2] [--rebuild]`，APFS 克隆游戏 + 隔离 HOME + `--force-steam=off`，不碰真实游戏与存档。
 - 开局伤害模拟：`docs/tools/opening_sim.py`（本模组）与 `docs/tools/vanilla_glory.py`（原版荣耀），引擎与口径见 `docs/tools/sim_core.py`。
   遭遇战的 `SetOpenings` 必须与模拟器的 `OPENINGS` 一致，自检会把游戏里实际生成的起手打进日志。
+- 弱点破坏定向回归：`python3 tools/test_weakness_break.py`（需要 .NET 9 SDK，可用 `--dotnet /path/to/dotnet`）。主动跨越生命阈值，执行精锐与能力的生产源码，检查 A0/A10 突刺基础伤害、活力奖励及常规循环续接；外部游戏 API 使用测试替身，验证范围见 [测试说明](tests/WeaknessBreakRegression/README.md)。
 - 本地化由 `tools/write_loc.py` 生成，改文案改脚本再跑一遍。
 - 特效预览：`tools/ak_vfx/preview.py <配置>` 在离线克隆里开游戏窗口，摆怪物、播特效、截帧拼图（配置格式见脚本说明）。
 

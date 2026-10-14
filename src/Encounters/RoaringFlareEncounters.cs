@@ -9,7 +9,7 @@ using STS2RitsuLib.Scaffolding.Content;
 
 namespace ArknightsRoaringFlare.Encounters;
 
-// 怒号光明的战斗池：弱 4、普通 9、精英 2，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
+// 怒号光明的战斗池：弱 4、普通 8、精英 3，Boss 只有塔露拉（A10 双 Boss 见 Integration.DoubleBossPatch）。
 // 组成、总血量与对照原版的难度见 docs/设计文档.md。起手偏移（SetOpenings）与 docs/tools/opening_sim.py 的 OPENINGS 同步；
 // 先遣与精锐巡逻队的普通纠察官共用完整循环，高级纠察官前三回合打盹；裂兽固定以 1/2/3 起手，族母固定召集开场。
 // 同一场里的同种怪起手一律错开（模拟器硬约束，自检核对）。站位从左到右就是出手顺序，给自己叠力量的头目站最右。
@@ -52,7 +52,7 @@ public sealed class RavagersWeak : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 1, 2);
 }
 
-/// <summary>R8-6：着铠术师单体（先法术连击）。</summary>
+/// <summary>R8-6：着铠术师单体，先施加咒法。</summary>
 public sealed class ArmoredCasterWeak : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
@@ -63,7 +63,7 @@ public sealed class ArmoredCasterWeak : FlareEncounter
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0);
 }
 
 // ---- 普通 ----
@@ -109,7 +109,7 @@ public sealed class RavagerPackNormal : FlareEncounter
 	protected override IEnumerable<MonsterModel> Candidates => [M<RavagerMatriarch>(), M<UrsusRavager>()];
 }
 
-/// <summary>R8-4 火种，一触即灭：突袭弩手 ×2（第二名先射弩箭）。</summary>
+/// <summary>R8-4 火种，一触即灭：突袭弩手 ×2（第一名速射，第二名冲击）。</summary>
 public sealed class CrossbowmenNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
@@ -119,16 +119,14 @@ public sealed class CrossbowmenNormal : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 1);
 }
 
-/// <summary>R8-6 战场，蔓延不止：术师小队，着铠术师 + 高级着铠术师（高级先铠化）。</summary>
+/// <summary>高级术士（strong）：高级着铠术师单独出场，源石法术开场；保留原遭遇模型 ID。</summary>
 public sealed class CasterSquadNormal : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Monster;
 
 	public override IEnumerable<EncounterTag> Tags => [FlareEncounterTags.Casters];
 
-	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>(), M<SeniorArmoredCaster>()];
-
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 2);
+	protected override IReadOnlyList<MonsterModel> Lineup => [M<SeniorArmoredCaster>()];
 }
 
 /// <summary>R8-5 寒冷，来自知觉：突击者小队，突击者（先稳阵）+ 纠察官。</summary>
@@ -138,7 +136,7 @@ public sealed class CommandoSquadNormal : FlareEncounter
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusCommando>(), M<InfectedPatrolOfficer>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2, 1);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 1);
 }
 
 /// <summary>R8-7 牵引的炮火：纠察官 + 炮火先兆者（先标定，下一回合炮击）。</summary>
@@ -171,26 +169,29 @@ public sealed class HostCenturionNormal : FlareEncounter
 	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2, 2);
 }
 
-/// <summary>H8-2：乌萨斯突击者队长单体（先压阵）。</summary>
+/// <summary>精英：半血队长先压阵，第三回合交接左/中/右三名援军；保留既有模型 ID。</summary>
 public sealed class CommandoCaptainNormal : FlareEncounter
 {
-	public override RoomType RoomType => RoomType.Monster;
-
+	public override RoomType RoomType => RoomType.Elite;
+	public override EncounterAssetProfile AssetProfile => new(
+		EncounterScenePath: RoaringFlareAssets.EncounterScene("commando_captain"),
+		ExtraAssetPaths: [ModelDb.Monster<UrsusCommando>().CreatureScenePath, ModelDb.Monster<UrsusArmoredCaster>().CreatureScenePath, ModelDb.Monster<UrsusCrossbowman>().CreatureScenePath]);
+	public override IReadOnlyList<string> Slots => CommandoCaptain.FormationSlots;
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<CommandoCaptain>()];
-
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+	protected override IReadOnlyList<string> LineupSlots => [CommandoCaptain.CaptainSlot];
+	protected override IEnumerable<MonsterModel> Candidates => [M<CommandoCaptain>(), M<UrsusCommando>(), M<UrsusArmoredCaster>(), M<UrsusCrossbowman>()];
 }
 
 // ---- 精英 ----
 
-/// <summary>WD-8 大雪将至（「遗尘漫步」）：“皇帝的利刃”，追猎者（先巡猎）。两形态，有专属配乐。</summary>
+/// <summary>WD-8 大雪将至（「遗尘漫步」）：“皇帝的利刃”，追猎者（先巡猎）。两阶段，沿用精英战音乐。</summary>
 public sealed class EmperorsBladeElite : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Elite;
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<EmperorsBladeHunter>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 2);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0);
 }
 
 /// <summary>百战精锐：帝国前锋百战精锐单体强敌，突刺开场；沿用旧模型 ID。</summary>
@@ -201,14 +202,14 @@ public sealed class VanguardVeteranElite : FlareEncounter
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<VanguardVeteran>()];
 }
 
-/// <summary>R8-8 人心，向背无常：着铠术师（先法术连击）+ 帝国炮火中枢先兆者（先标定）。</summary>
+/// <summary>R8-8 人心，向背无常：着铠术师（先咒法）+ 帝国炮火中枢先兆者（先标定）。</summary>
 public sealed class CoreHarbingerElite : FlareEncounter
 {
 	public override RoomType RoomType => RoomType.Elite;
 
 	protected override IReadOnlyList<MonsterModel> Lineup => [M<UrsusArmoredCaster>(), M<CoreHarbinger>()];
 
-	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 1, 0);
+	protected override void ConfigureMonsters(IReadOnlyList<MonsterModel> monsters) => SetOpenings(monsters, 0, 0);
 }
 
 // ---- Boss ----
