@@ -31,6 +31,7 @@ tools/build_and_deploy.sh
 - 离线自检：`tools/offline_selftest.sh [--with-actlikeit2] [--rebuild]`，APFS 克隆游戏 + 隔离 HOME + `--force-steam=off`，不碰真实游戏与存档。
 - 开局伤害模拟：`docs/tools/opening_sim.py`（本模组）与 `docs/tools/vanilla_glory.py`（原版荣耀），引擎与口径见 `docs/tools/sim_core.py`。
   遭遇战的 `SetOpenings` 必须与模拟器的 `OPENINGS` 一致，自检会把游戏里实际生成的起手打进日志。
+- 弱点破坏定向回归：`python3 tools/test_weakness_break.py`（需要 .NET 9 SDK，可用 `--dotnet /path/to/dotnet`）。主动跨越生命阈值，执行精锐与能力的生产源码，检查 A0/A10 突刺基础伤害、活力奖励及常规循环续接；外部游戏 API 使用测试替身，验证范围见 [测试说明](tests/WeaknessBreakRegression/README.md)。
 - 本地化由 `tools/write_loc.py` 生成，改文案改脚本再跑一遍。
 - 特效预览：`tools/ak_vfx/preview.py <配置>` 在离线克隆里开游戏窗口，摆怪物、播特效、截帧拼图（配置格式见脚本说明）。
 

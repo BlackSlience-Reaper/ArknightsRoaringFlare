@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../src/Monsters/ImperialVanguard.cs" Link="Production/ImperialVanguard.cs" />
+    <Compile Include="../../src/Powers/WeaknessBreakPower.cs" Link="Production/WeaknessBreakPower.cs" />
+    <Compile Include="$(GeneratedHelpers)" Link="Production/FlareMonster.Helpers.g.cs" />
+  </ItemGroup>
+  <Target Name="RequireGeneratedHelpers" BeforeTargets="BeforeBuild" Condition="'$(GeneratedHelpers)' == ''">
+    <Error Text="Run python3 tools/test_weakness_break.py to generate the production helpers and run this test." />
+  </Target>
+</Project>
