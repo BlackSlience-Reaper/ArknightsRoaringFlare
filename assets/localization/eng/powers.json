@@ -41,10 +41,16 @@
   "ARKNIGHTS_ROARING_FLARE_POWER_LAST_STAND_POWER.title": "Last Stand",
   "ARKNIGHTS_ROARING_FLARE_POWER_LAST_STAND_POWER.description": "The first time its HP falls below half, gains [gold]Strength[/gold].",
   "ARKNIGHTS_ROARING_FLARE_POWER_LAST_STAND_POWER.smartDescription": "The first time its HP falls below half, gains [blue]{Amount}[/blue] [gold]Strength[/gold].",
+  "ARKNIGHTS_ROARING_FLARE_POWER_WEAKNESS_BREAK_POWER.title": "Weakness Break",
+  "ARKNIGHTS_ROARING_FLARE_POWER_WEAKNESS_BREAK_POWER.description": "Whenever the Imperial Vanguard's HP first falls to or below [blue]2/3[/blue] of its maximum HP, it is [gold]Stunned[/gold] and gains [blue]{Amount}[/blue] [gold]Vigor[/gold].",
+  "ARKNIGHTS_ROARING_FLARE_POWER_WEAKNESS_BREAK_POWER.smartDescription": "Whenever [gold]{OwnerName}[/gold]'s HP first falls to or below [blue]{Threshold}[/blue], it is [gold]Stunned[/gold] and gains [blue]{Amount}[/blue] [gold]Vigor[/gold].",
   "ARKNIGHTS_ROARING_FLARE_POWER_PERMANENT_REGEN_POWER.title": "Endless Regeneration",
   "ARKNIGHTS_ROARING_FLARE_POWER_PERMANENT_REGEN_POWER.description": "At the end of its turn, heals [blue]3[/blue] HP.",
   "ARKNIGHTS_ROARING_FLARE_POWER_PERMANENT_REGEN_POWER.smartDescription": "[gold]{OwnerName}[/gold] heals [blue]{Amount}[/blue] HP at the end of its turn.",
   "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.title": "Siphon",
   "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.description": "[gold]Siphon[/gold] heals it for [blue]150%[/blue] of the unblocked damage it deals.",
-  "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.smartDescription": "[gold]Siphon[/gold] heals it for [blue]{Amount}%[/blue] of the unblocked damage it deals."
+  "ARKNIGHTS_ROARING_FLARE_POWER_SIPHON_POWER.smartDescription": "[gold]Siphon[/gold] heals it for [blue]{Amount}%[/blue] of the unblocked damage it deals.",
+  "ARKNIGHTS_ROARING_FLARE_POWER_BATTLE_HARDENED_POWER.title": "Battle Hardened",
+  "ARKNIGHTS_ROARING_FLARE_POWER_BATTLE_HARDENED_POWER.description": "All unblocked damage it takes is delayed until the end of its turn.",
+  "ARKNIGHTS_ROARING_FLARE_POWER_BATTLE_HARDENED_POWER.smartDescription": "All unblocked damage [gold]{OwnerName}[/gold] takes is delayed until the end of its turn. Currently [blue]{PendingDamage}[/blue] damage is pending."
 }

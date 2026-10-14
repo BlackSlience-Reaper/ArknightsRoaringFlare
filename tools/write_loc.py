@@ -66,7 +66,7 @@ MONSTERS = {
     'ImperialVanguard': (('帝国前锋精锐', 'Imperial Vanguard'),
                          {'LONG_SHOT': ('远射', 'Long Shot'), 'THRUST': ('突刺', 'Thrust'), 'RESOLVE': ('战意', 'Resolve')}),
     'VanguardVeteran': (('帝国前锋百战精锐', 'Imperial Vanguard Veteran'),
-                        {'LONG_SHOT': ('远射', 'Long Shot'), 'THRUST': ('突刺', 'Thrust'), 'RESOLVE': ('战意', 'Resolve')}),
+                        {'LONG_SHOT': ('远射', 'Long Shot'), 'THRUST': ('突刺', 'Thrust'), 'RESOLVE': ('战意', 'Resolve'), 'PARRY': ('弹反', 'Parry')}),
     'HostHeavySoldier': (('宿主重装士兵', 'Host Heavy Soldier'),
                          {'SHIELD_BASH': ('盾击', 'Shield Bash'), 'HOLD': ('坚守', 'Hold Fast'), 'CRUSH': ('重压', 'Crush')}),
     'SarkazHostCenturion': (('萨卡兹宿主百夫长', 'Sarkaz Host Centurion'),
@@ -164,12 +164,24 @@ POWERS = {
         'Next enemy turn, a shell lands on you. It lands even if the Harbinger has been defeated.',
         '下个敌方回合，炮弹会对你造成[blue]{Amount}[/blue]点伤害；即使先兆者已被击败，炮弹也会落地。',
         'Next enemy turn, a shell deals [blue]{Amount}[/blue] damage to you. It lands even if the Harbinger has been defeated.'),
+    'BattleHardenedPower': (
+        '身经百战', 'Battle Hardened',
+        '每回合受到的所有未被格挡伤害都延迟至自身回合结束时结算。',
+        'All unblocked damage it takes is delayed until the end of its turn.',
+        '[gold]{OwnerName}[/gold]受到的所有未被格挡伤害都延迟至自身回合结束时结算。当前累计[blue]{PendingDamage}[/blue]点伤害。',
+        'All unblocked damage [gold]{OwnerName}[/gold] takes is delayed until the end of its turn. Currently [blue]{PendingDamage}[/blue] damage is pending.'),
     'LastStandPower': (
         '背水', 'Last Stand',
         '生命第一次降到一半以下时，获得[gold]力量[/gold]。',
         'The first time its HP falls below half, gains [gold]Strength[/gold].',
         '生命第一次降到一半以下时，获得[blue]{Amount}[/blue]点[gold]力量[/gold]。',
         'The first time its HP falls below half, gains [blue]{Amount}[/blue] [gold]Strength[/gold].'),
+    'WeaknessBreakPower': (
+        '弱点破坏', 'Weakness Break',
+        '每当[gold]帝国前锋精锐[/gold]的生命值第一次降低到最大生命值的[blue]2/3[/blue]及以下时，被[gold]击晕[/gold]并获得[blue]{Amount}[/blue]点[gold]活力[/gold]。',
+        'Whenever the Imperial Vanguard\'s HP first falls to or below [blue]2/3[/blue] of its maximum HP, it is [gold]Stunned[/gold] and gains [blue]{Amount}[/blue] [gold]Vigor[/gold].',
+        '每当[gold]{OwnerName}[/gold]的生命值第一次降低到[blue]{Threshold}[/blue]及以下时，被[gold]击晕[/gold]并获得[blue]{Amount}[/blue]点[gold]活力[/gold]。',
+        'Whenever [gold]{OwnerName}[/gold]\'s HP first falls to or below [blue]{Threshold}[/blue], it is [gold]Stunned[/gold] and gains [blue]{Amount}[/blue] [gold]Vigor[/gold].'),
     'PermanentRegenPower': (
         '永续再生', 'Endless Regeneration',
         '回合结束时回复[blue]3[/blue]点生命。',

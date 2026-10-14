@@ -11,7 +11,7 @@ using STS2RitsuLib.Scaffolding.Content;
 namespace ArknightsRoaringFlare.Powers;
 
 /// <summary>
-/// 背水（帝国前锋精锐、百战精锐）：生命第一次降到一半以下时立刻获得层数点力量，然后移除。
+/// 旧版背水：生命第一次降到一半以下时立刻获得层数点力量，然后移除；保留模型 ID 供既有存档使用。
 /// PRTS：“生命值低于 50% 时攻击力 +100%”。阈值在受伤当下结算，联机两端一致。
 /// </summary>
 public sealed class LastStandPower : ModPowerTemplate
