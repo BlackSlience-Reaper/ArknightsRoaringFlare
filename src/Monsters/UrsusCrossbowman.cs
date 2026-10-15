@@ -55,7 +55,7 @@ public sealed class UrsusCrossbowman : FlareMonster
 
 	private int BoltDamage => DeadlyValue(10, 9);
 
-	private int VolleyDamage => DeadlyValue(4, 3);
+	private int VolleyDamage => DeadlyValue(5, 4);
 
 	public override async Task AfterAddedToRoom()
 	{
